@@ -1,6 +1,6 @@
 {
   "projects": {
-    "default": "tu-proyecto-firebase-id",
+    "default": "final-test-dev",
     "dev": "tu-proyecto-dev-id"
   },
   "targets": {},

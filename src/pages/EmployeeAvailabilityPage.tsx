@@ -37,8 +37,6 @@ export function EmployeeAvailabilityPage() {
     initializeEmployeeAvailability,
     renewAnnualAvailability,
     renewMonthlyAvailability,
-    cleanMonthlyOcasionAvailability,
-    cleanMG07Availability,
     clearError
   } = useLicenseStore();
 
@@ -69,17 +67,18 @@ export function EmployeeAvailabilityPage() {
     }
   };
 
-  const handleCleanMonthlyOcasion = async () => {
-    if (employeeId) {
-      await cleanMonthlyOcasionAvailability(employeeId);
-    }
-  };
+  // Funciones para limpiar disponibilidad (comentadas por ahora)
+  // const handleCleanMonthlyOcasion = async () => {
+  //   if (employeeId) {
+  //     await cleanMonthlyOcasionAvailability(employeeId);
+  //   }
+  // };
 
-  const handleCleanMG07 = async () => {
-    if (employeeId) {
-      await cleanMG07Availability(employeeId);
-    }
-  };
+  // const handleCleanMG07 = async () => {
+  //   if (employeeId) {
+  //     await cleanMG07Availability(employeeId);
+  //   }
+  // };
 
   const handleEnableReset = () => {
     setResetEnabled(true);
@@ -527,7 +526,7 @@ export function EmployeeAvailabilityPage() {
                             <div key={monthKey} className="text-xs text-gray-500">
                               <div className="flex justify-between">
                                 <span>{monthKey}:</span>
-                                <span>{data.utilizada}/{data.asignada} {licencia.unidad}</span>
+                                <span>{data.utilizada}/{data.utilizada + data.disponible} {licencia.unidad}</span>
                               </div>
                             </div>
                           ))}

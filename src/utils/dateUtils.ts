@@ -2,7 +2,7 @@
 // UTILIDADES DE FECHAS PARA LICENCIAS
 // ========================================
 
-import { addDays, addMonths, differenceInDays, isLeapYear } from 'date-fns';
+import { addDays, addMonths, differenceInDays } from 'date-fns';
 
 /**
  * Calcular días entre dos fechas (por calendario)

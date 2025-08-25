@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
+
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -14,45 +13,22 @@ import { useEmployeeStore } from '../stores/employeeStore';
 import { type LicenseType } from '../types/licenseTypes';
 import { formatTimeTotal, formatInputDate } from '../utils/formUtils';
 
-// Esquema dinámico según la categoría de licencia
-const createEditLicenseSchema = (licenseTypes: LicenseType[]) => {
-  return z.object({
-    licenseTypeCode: z.string().min(1, 'Tipo de licencia es requerido'),
-    fechaInicio: z.string().min(1, 'Fecha de inicio es requerida'),
-    fechaFin: z.string().min(1, 'Fecha de fin es requerida'),
-    horas: z.coerce.number().min(0, 'Mínimo 0 horas'),
-    minutos: z.coerce.number().min(0, 'Mínimo 0 minutos').max(59, 'Máximo 59 minutos'),
-    razon: z.string().min(1, 'Motivo es requerido'),
-    observaciones: z.string().optional(),
-  }).refine((data) => {
-    const startDate = new Date(data.fechaInicio);
-    const endDate = new Date(data.fechaFin);
-    return endDate >= startDate;
-  }, {
-    message: 'La fecha de fin debe ser posterior o igual a la fecha de inicio',
-    path: ['fechaFin'],
-  }).refine((data) => {
-    // Validación específica para licencias de horas
-    const licenseType = licenseTypes.find(type => type.codigo === data.licenseTypeCode);
-    if (licenseType?.categoria === 'HORAS') {
-      const totalHours = data.horas + (data.minutos / 60);
-      return totalHours > 0;
-    }
-    return true;
-  }, {
-    message: 'Debe ingresar al menos 1 hora o 1 minuto para licencias por horas',
-    path: ['horas'],
-  });
+type EditLicenseFormData = {
+  licenseTypeCode: string;
+  fechaInicio: string;
+  fechaFin: string;
+  horas: number;
+  minutos: number;
+  razon: string;
+  observaciones?: string;
 };
-
-type EditLicenseFormData = z.infer<ReturnType<typeof createEditLicenseSchema>>;
 
 export function EditLicensePage() {
   const { employeeId, requestId } = useParams<{ employeeId: string; requestId: string }>();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [licenseRequest, setLicenseRequest] = useState<any>(null);
+  const [licenseRequest, setLicenseRequest] = useState<unknown>(null);
 
   const {
     licenseRequests,
@@ -71,7 +47,6 @@ export function EditLicensePage() {
     setValue,
     formState: { errors }
   } = useForm<EditLicenseFormData>({
-    resolver: zodResolver(createEditLicenseSchema(licenseTypes)),
     defaultValues: {
       horas: 0,
       minutos: 0,

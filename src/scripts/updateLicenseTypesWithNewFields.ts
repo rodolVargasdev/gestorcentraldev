@@ -1,4 +1,4 @@
-import { writeBatch, doc, collection, getDocs, query, where } from 'firebase/firestore';
+import { writeBatch, doc, collection, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { LICENSE_TYPES } from '../types/licenseTypes';
 
