@@ -30,6 +30,11 @@ dist-ssr
 .env.test.local
 .env.production.local
 
+# Firebase credentials (CRÍTICO - NO SUBIR)
+firebase-credentials.json
+service-account-key.json
+firebase-adminsdk-*.json
+
 # Firebase
 .firebase/
 firebase-debug.log
