@@ -18,6 +18,7 @@ export interface LicenseType {
   calculo_automatico_fecha_fin?: boolean;
   dias_calculo_automatico?: number;
   requiere_historial_anual?: boolean;
+  max_acumulacion?: number; // Máximo de días que se pueden acumular
   createdAt: Date;
   updatedAt: Date;
 }
@@ -77,6 +78,18 @@ export const LICENSE_TYPES: Omit<LicenseType, 'id' | 'createdAt' | 'updatedAt'>[
     max_por_solicitud: 15, // Máximo 15 días por solicitud
     descripcion: 'Vacaciones anuales obligatorias - no acumulables',
     activo: true
+  },
+  {
+    codigo: 'VGA12',
+    nombre: 'Permiso de Vacación Acumulativo',
+    categoria: 'DIAS',
+    periodo_control: 'anual',
+    cantidad_maxima: 15, // 15 días por año
+    unidad_control: 'dias',
+    max_por_solicitud: 15, // Máximo 15 días por solicitud
+    descripcion: 'Vacaciones acumulativas - 15 días/año, máximo acumulación 90 días',
+    activo: true,
+    max_acumulacion: 90 // Máximo de acumulación en días
   },
 
   // ========================================

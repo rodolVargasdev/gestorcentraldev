@@ -1,0 +1,267 @@
+extend type Query {
+  """
+  ✨ Look up a single `Document` based on `id`, `key` or `first` and return selected fields (or `null` if not found).
+  """
+  document(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: Document_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: Document_FirstRow
+  ): Document @fdc_generated(from: "Document", purpose: QUERY_SINGLE)
+  """
+  ✨ Look up a single `License` based on `id`, `key` or `first` and return selected fields (or `null` if not found).
+  """
+  license(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: License_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: License_FirstRow
+  ): License @fdc_generated(from: "License", purpose: QUERY_SINGLE)
+  """
+  ✨ Look up a single `LicenseType` based on `id`, `key` or `first` and return selected fields (or `null` if not found).
+  """
+  licenseType(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: LicenseType_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: LicenseType_FirstRow
+  ): LicenseType @fdc_generated(from: "LicenseType", purpose: QUERY_SINGLE)
+  """
+  ✨ Look up a single `Notification` based on `id`, `key` or `first` and return selected fields (or `null` if not found).
+  """
+  notification(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: Notification_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: Notification_FirstRow
+  ): Notification @fdc_generated(from: "Notification", purpose: QUERY_SINGLE)
+  """
+  ✨ Look up a single `User` based on `id`, `key` or `first` and return selected fields (or `null` if not found).
+  """
+  user(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: User_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: User_FirstRow
+  ): User @fdc_generated(from: "User", purpose: QUERY_SINGLE)
+  """
+  ✨ List `Document` objects in the table and return selected fields, optionally filtered by `where` conditions
+  """
+  documents(
+    """
+    Filter condition to narrow down the query results.
+    """
+    where: Document_Filter
+
+    """
+    Order the query results by specific fields.
+    """
+    orderBy: [Document_Order!]
+
+    """
+    Number of rows to skip before starting to return the results.
+    """
+    offset: Int
+
+    """
+    Maximum number of rows to return (defaults to 100 rows).
+    """
+    limit: Int = 100
+
+    """
+    Set to true to return distinct results.
+    """
+    distinct: Boolean = false
+
+    """
+    Filter condition to apply to the groups of aggregate queries.
+    """
+    having: Document_Having
+  ): [Document!]! @fdc_generated(from: "Document", purpose: QUERY_MULTIPLE)
+  """
+  ✨ List `License` objects in the table and return selected fields, optionally filtered by `where` conditions
+  """
+  licenses(
+    """
+    Filter condition to narrow down the query results.
+    """
+    where: License_Filter
+
+    """
+    Order the query results by specific fields.
+    """
+    orderBy: [License_Order!]
+
+    """
+    Number of rows to skip before starting to return the results.
+    """
+    offset: Int
+
+    """
+    Maximum number of rows to return (defaults to 100 rows).
+    """
+    limit: Int = 100
+
+    """
+    Set to true to return distinct results.
+    """
+    distinct: Boolean = false
+
+    """
+    Filter condition to apply to the groups of aggregate queries.
+    """
+    having: License_Having
+  ): [License!]! @fdc_generated(from: "License", purpose: QUERY_MULTIPLE)
+  """
+  ✨ List `LicenseType` objects in the table and return selected fields, optionally filtered by `where` conditions
+  """
+  licenseTypes(
+    """
+    Filter condition to narrow down the query results.
+    """
+    where: LicenseType_Filter
+
+    """
+    Order the query results by specific fields.
+    """
+    orderBy: [LicenseType_Order!]
+
+    """
+    Number of rows to skip before starting to return the results.
+    """
+    offset: Int
+
+    """
+    Maximum number of rows to return (defaults to 100 rows).
+    """
+    limit: Int = 100
+
+    """
+    Set to true to return distinct results.
+    """
+    distinct: Boolean = false
+
+    """
+    Filter condition to apply to the groups of aggregate queries.
+    """
+    having: LicenseType_Having
+  ): [LicenseType!]! @fdc_generated(from: "LicenseType", purpose: QUERY_MULTIPLE)
+  """
+  ✨ List `Notification` objects in the table and return selected fields, optionally filtered by `where` conditions
+  """
+  notifications(
+    """
+    Filter condition to narrow down the query results.
+    """
+    where: Notification_Filter
+
+    """
+    Order the query results by specific fields.
+    """
+    orderBy: [Notification_Order!]
+
+    """
+    Number of rows to skip before starting to return the results.
+    """
+    offset: Int
+
+    """
+    Maximum number of rows to return (defaults to 100 rows).
+    """
+    limit: Int = 100
+
+    """
+    Set to true to return distinct results.
+    """
+    distinct: Boolean = false
+
+    """
+    Filter condition to apply to the groups of aggregate queries.
+    """
+    having: Notification_Having
+  ): [Notification!]! @fdc_generated(from: "Notification", purpose: QUERY_MULTIPLE)
+  """
+  ✨ List `User` objects in the table and return selected fields, optionally filtered by `where` conditions
+  """
+  users(
+    """
+    Filter condition to narrow down the query results.
+    """
+    where: User_Filter
+
+    """
+    Order the query results by specific fields.
+    """
+    orderBy: [User_Order!]
+
+    """
+    Number of rows to skip before starting to return the results.
+    """
+    offset: Int
+
+    """
+    Maximum number of rows to return (defaults to 100 rows).
+    """
+    limit: Int = 100
+
+    """
+    Set to true to return distinct results.
+    """
+    distinct: Boolean = false
+
+    """
+    Filter condition to apply to the groups of aggregate queries.
+    """
+    having: User_Having
+  ): [User!]! @fdc_generated(from: "User", purpose: QUERY_MULTIPLE)
+}

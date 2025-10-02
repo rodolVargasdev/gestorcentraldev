@@ -32,6 +32,7 @@ interface EmployeeFormData {
   emergencyContactName: string;
   emergencyContactPhone: string;
   emergencyContactRelationship: string;
+  isProfessionalService: boolean;
 }
 
 const DEPARTMENTS = [
@@ -94,6 +95,7 @@ export const EditEmployeePage: React.FC = () => {
         setValue('emergencyContactName', foundEmployee.emergencyContact?.name || '');
         setValue('emergencyContactPhone', foundEmployee.emergencyContact?.phone || '');
         setValue('emergencyContactRelationship', foundEmployee.emergencyContact?.relationship || '');
+        setValue('isProfessionalService', foundEmployee.isProfessionalService || false);
       } else {
         setNotFound(true);
       }
@@ -132,6 +134,7 @@ export const EditEmployeePage: React.FC = () => {
         employeeType: data.employeeType,
         hireDate: new Date(data.hireDate),
         salary: data.salary || 0,
+        isProfessionalService: !!data.isProfessionalService,
         gender: data.gender,
         birthDate: data.birthDate ? new Date(data.birthDate) : new Date(),
         address: data.address || '',
@@ -461,8 +464,24 @@ export const EditEmployeePage: React.FC = () => {
                 </div>
 
                 <div>
+                  <label className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      {...register('isProfessionalService')}
+                      className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    />
+                    <span className="text-sm font-medium text-gray-700">
+                      Es de servicio profesional
+                    </span>
+                  </label>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Los empleados de servicio profesional solo pueden solicitar permisos de olvido de marcación y cambio de turno.
+                  </p>
+                </div>
+
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Salario (Q)
+                    Salario ($)
                   </label>
                   <Input
                     {...register('salary', { 

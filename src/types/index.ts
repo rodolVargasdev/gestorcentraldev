@@ -18,6 +18,7 @@ export interface User {
 export interface Employee {
   id: string;
   employeeId: string;
+  userId?: string; // ID del usuario de Firebase Auth
   firstName: string;
   lastName: string;
   email: string;
@@ -36,6 +37,7 @@ export interface Employee {
     phone: string;
     relationship: string;
   };
+  isProfessionalService?: boolean; // Indica si es de servicio profesional (solo OM14 y CT15)
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -107,6 +109,9 @@ export interface LicenciaDia {
   uso_mensual?: Record<string, { utilizada: number; disponible: number }>;
   // ✅ NUEVO: Historial anual para permisos retroactivos
   uso_anual?: Record<string, { utilizada: number; disponible: number; asignada: number }>;
+  // ✅ NUEVO: Campos para permisos acumulativos (VGA12)
+  acumulado_total?: number; // Días acumulados de años anteriores
+  max_acumulacion?: number; // Máximo de días que se pueden acumular
   solicitudes_activas: string[];
   ultima_actualizacion: Date;
 }

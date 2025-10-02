@@ -14,7 +14,7 @@ import {
   type DocumentData,
   type QueryDocumentSnapshot,
 } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { db, auth } from '../lib/firebase';
 import { type LicenseType } from '../types/licenseTypes';
 import { type Employee, type LicenciaHora, type LicenciaDia, type LicenciaOcasion, type LicenseRequest, type CreateLicenseRequestData } from '../types/index';
 import { getCurrentDateInElSalvador } from '../utils/dateUtils';
@@ -71,25 +71,27 @@ export class LicenseService {
             const docRef = doc(db, this.licenseTypesCollection, existingDoc.id);
             
                          // Crear objeto de actualización con TODAS las propiedades
-             const updateData = {
-               updatedAt: serverTimestamp(),
-               // ✅ ACTUALIZAR TODAS LAS PROPIEDADES CORE
-               categoria: licenseType.categoria,
-               periodo_control: licenseType.periodo_control,
-               cantidad_maxima: licenseType.cantidad_maxima,
-               unidad_control: licenseType.unidad_control,
-               descripcion: licenseType.descripcion,
-               activo: licenseType.activo,
-               nombre: licenseType.nombre,
-               // ✅ AGREGAR PROPIEDADES NUEVAS SI EXISTEN
-               ...(licenseType.calculo_automatico_fecha_fin !== undefined && { calculo_automatico_fecha_fin: licenseType.calculo_automatico_fecha_fin }),
-               ...(licenseType.dias_calculo_automatico !== undefined && { dias_calculo_automatico: licenseType.dias_calculo_automatico }),
-               ...(licenseType.requiere_historial_anual !== undefined && { requiere_historial_anual: licenseType.requiere_historial_anual }),
-               // ✅ AGREGAR aplica_genero SOLO SI NO ES UNDEFINED
-               ...(licenseType.aplica_genero !== undefined && { aplica_genero: licenseType.aplica_genero }),
-               // ✅ AGREGAR max_por_solicitud SOLO SI NO ES UNDEFINED
-               ...(licenseType.max_por_solicitud !== undefined && { max_por_solicitud: licenseType.max_por_solicitud }),
-             };
+            const updateData = {
+              updatedAt: serverTimestamp(),
+              // ✅ ACTUALIZAR TODAS LAS PROPIEDADES CORE
+              categoria: licenseType.categoria,
+              periodo_control: licenseType.periodo_control,
+              cantidad_maxima: licenseType.cantidad_maxima,
+              unidad_control: licenseType.unidad_control,
+              descripcion: licenseType.descripcion,
+              activo: licenseType.activo,
+              nombre: licenseType.nombre,
+              // ✅ AGREGAR PROPIEDADES NUEVAS SI EXISTEN
+              ...(licenseType.calculo_automatico_fecha_fin !== undefined && { calculo_automatico_fecha_fin: licenseType.calculo_automatico_fecha_fin }),
+              ...(licenseType.dias_calculo_automatico !== undefined && { dias_calculo_automatico: licenseType.dias_calculo_automatico }),
+              ...(licenseType.requiere_historial_anual !== undefined && { requiere_historial_anual: licenseType.requiere_historial_anual }),
+              // ✅ AGREGAR aplica_genero SOLO SI NO ES UNDEFINED
+              ...(licenseType.aplica_genero !== undefined && { aplica_genero: licenseType.aplica_genero }),
+              // ✅ AGREGAR max_por_solicitud SOLO SI NO ES UNDEFINED
+              ...(licenseType.max_por_solicitud !== undefined && { max_por_solicitud: licenseType.max_por_solicitud }),
+              // ✅ AGREGAR max_acumulacion SOLO SI NO ES UNDEFINED
+              ...(licenseType.max_acumulacion !== undefined && { max_acumulacion: licenseType.max_acumulacion }),
+            };
             
             batch.update(docRef, updateData);
             
@@ -191,11 +193,21 @@ export class LicenseService {
   static async getAvailableQuantity(employeeId: string, licenseTypeCode: string): Promise<number> {
     try {
       console.log(`🔍 DEBUG getAvailableQuantity: ${licenseTypeCode} para empleado ${employeeId}`);
-      
+
       const employee = await this.getEmployeeById(employeeId);
       if (!employee?.disponibilidad) {
         console.log(`❌ DEBUG: Empleado sin disponibilidad`);
         return 0;
+      }
+
+      // ✅ VERIFICACIÓN DE SERVICIO PROFESIONAL
+      // Los empleados de servicio profesional solo pueden usar OM14 y CT15
+      if (employee.isProfessionalService) {
+        const allowedLicenses = ['OM14', 'CT15'];
+        if (!allowedLicenses.includes(licenseTypeCode)) {
+          console.log(`🚫 DEBUG: Empleado de servicio profesional - ${licenseTypeCode} no disponible`);
+          return 0; // No disponible para empleados de servicio profesional
+        }
       }
 
       const licenseType = await this.getLicenseTypeByCode(licenseTypeCode);
@@ -208,7 +220,8 @@ export class LicenseService {
         codigo: licenseType.codigo,
         categoria: licenseType.categoria,
         periodo_control: licenseType.periodo_control,
-        max_por_solicitud: licenseType.max_por_solicitud
+        max_por_solicitud: licenseType.max_por_solicitud,
+        isProfessionalService: employee.isProfessionalService
       });
 
       switch (licenseType.categoria) {
@@ -225,26 +238,46 @@ export class LicenseService {
                  case 'DIAS': {
            const diaLicencia = employee.disponibilidad?.licencias_dias?.[licenseTypeCode];
            console.log(`🔍 DEBUG DIAS: periodo_control = ${licenseType.periodo_control}`);
-           
+
                        if (licenseType.periodo_control === 'anual') {
-              // ✅ CONVERTIR A NÚMERO PARA ASEGURAR CÁLCULOS CORRECTOS
-              const disponible = typeof diaLicencia?.disponible_anual === 'string' 
-                ? parseFloat(diaLicencia.disponible_anual) 
-                : (diaLicencia?.disponible_anual || 0);
-              
-              // ✅ DEBUG ESPECÍFICO PARA VG11
-              if (licenseTypeCode === 'VG11') {
-                console.log('🔍 DEBUG VG11 DISPONIBILIDAD:', {
+              // ✅ MANEJO ESPECIAL PARA VGA12 (VACACIONES ACUMULATIVAS)
+              if (licenseTypeCode === 'VGA12') {
+                // Para VGA12, la disponibilidad incluye los días asignados + acumulados
+                const disponible = typeof diaLicencia?.disponible_anual === 'string'
+                  ? parseFloat(diaLicencia.disponible_anual)
+                  : (diaLicencia?.disponible_anual || 0);
+
+                console.log('🔍 DEBUG VGA12 DISPONIBILIDAD:', {
                   disponible_anual: diaLicencia?.disponible_anual,
-                  tipo: typeof diaLicencia?.disponible_anual,
+                  acumulado_total: diaLicencia?.acumulado_total,
+                  max_acumulacion: diaLicencia?.max_acumulacion,
                   disponible_calculada: disponible,
                   utilizada_anual: diaLicencia?.utilizada_anual,
                   asignada_anual: diaLicencia?.asignada_anual
                 });
+
+                console.log(`🔍 DEBUG VGA12: ${disponible}`);
+                return disponible;
+              } else {
+                // ✅ CONVERTIR A NÚMERO PARA ASEGURAR CÁLCULOS CORRECTOS
+                const disponible = typeof diaLicencia?.disponible_anual === 'string'
+                  ? parseFloat(diaLicencia.disponible_anual)
+                  : (diaLicencia?.disponible_anual || 0);
+
+                // ✅ DEBUG ESPECÍFICO PARA VG11
+                if (licenseTypeCode === 'VG11') {
+                  console.log('🔍 DEBUG VG11 DISPONIBILIDAD:', {
+                    disponible_anual: diaLicencia?.disponible_anual,
+                    tipo: typeof diaLicencia?.disponible_anual,
+                    disponible_calculada: disponible,
+                    utilizada_anual: diaLicencia?.utilizada_anual,
+                    asignada_anual: diaLicencia?.asignada_anual
+                  });
+                }
+
+                console.log(`🔍 DEBUG DIAS ANUAL: ${disponible}`);
+                return disponible;
               }
-              
-              console.log(`🔍 DEBUG DIAS ANUAL: ${disponible}`);
-              return disponible;
            } else if (licenseType.periodo_control === 'mensual') {
              // ✅ CONVERTIR A NÚMERO PARA ASEGURAR CÁLCULOS CORRECTOS
              const disponible = typeof diaLicencia?.disponible_mes_actual === 'string' 
@@ -373,35 +406,79 @@ export class LicenseService {
           const diaLicencia = disponibilidad.licencias_dias?.[licenseTypeCode];
           if (diaLicencia) {
             if (licenseType.periodo_control === 'anual') {
-              // ✅ Restaurar disponibilidad para permisos anuales
-              if (startDate) {
-                const permisoYear = startDate.getFullYear();
-                const currentYear = getCurrentDateInElSalvador().getFullYear();
-                
-                // Si el permiso es de un año anterior, restaurar el historial de ese año
-                if (permisoYear < currentYear) {
-                  if (diaLicencia.uso_anual) {
-                    const yearKey = permisoYear.toString();
-                    if (diaLicencia.uso_anual[yearKey]) {
-                      diaLicencia.uso_anual[yearKey].utilizada -= quantity;
-                      diaLicencia.uso_anual[yearKey].disponible += quantity;
-                      console.log(`✅ Disponibilidad anual restaurada para ${yearKey}: ${quantity} días`);
+              // ✅ MANEJO ESPECIAL PARA VGA12 (VACACIONES ACUMULATIVAS)
+              if (licenseTypeCode === 'VGA12') {
+                // Para VGA12, solo restaurar contadores anuales, el acumulado permanece
+                // ✅ CONVERTIR A NÚMEROS PARA ASEGURAR CÁLCULOS CORRECTOS
+                const utilizadaActual = typeof diaLicencia.utilizada_anual === 'string'
+                  ? parseFloat(diaLicencia.utilizada_anual)
+                  : (diaLicencia.utilizada_anual || 0);
+                const disponibleActual = typeof diaLicencia.disponible_anual === 'string'
+                  ? parseFloat(diaLicencia.disponible_anual)
+                  : (diaLicencia.disponible_anual || 0);
+
+                diaLicencia.utilizada_anual = utilizadaActual - quantity;
+                diaLicencia.disponible_anual = disponibleActual + quantity;
+
+                console.log('✅ VGA12 RESTAURADO:', {
+                  utilizadaAnterior: utilizadaActual,
+                  disponibleAnterior: disponibleActual,
+                  cantidadRestaurada: quantity,
+                  acumulado_total: diaLicencia.acumulado_total,
+                  utilizadaNueva: diaLicencia.utilizada_anual,
+                  disponibleNueva: diaLicencia.disponible_anual
+                });
+              } else {
+                // ✅ Restaurar disponibilidad para permisos anuales
+                if (startDate) {
+                  const permisoYear = startDate.getFullYear();
+                  const currentYear = getCurrentDateInElSalvador().getFullYear();
+
+                  // Si el permiso es de un año anterior, restaurar el historial de ese año
+                  if (permisoYear < currentYear) {
+                    if (diaLicencia.uso_anual) {
+                      const yearKey = permisoYear.toString();
+                      if (diaLicencia.uso_anual[yearKey]) {
+                        diaLicencia.uso_anual[yearKey].utilizada -= quantity;
+                        diaLicencia.uso_anual[yearKey].disponible += quantity;
+                        console.log(`✅ Disponibilidad anual restaurada para ${yearKey}: ${quantity} días`);
+                      }
                     }
+                  } else {
+                    // Si es del año actual, restaurar disponibilidad actual
+                    // ✅ CONVERTIR A NÚMEROS PARA ASEGURAR CÁLCULOS CORRECTOS
+                    const utilizadaActual = typeof diaLicencia.utilizada_anual === 'string'
+                      ? parseFloat(diaLicencia.utilizada_anual)
+                      : (diaLicencia.utilizada_anual || 0);
+                    const disponibleActual = typeof diaLicencia.disponible_anual === 'string'
+                      ? parseFloat(diaLicencia.disponible_anual)
+                      : (diaLicencia.disponible_anual || 0);
+
+                    diaLicencia.utilizada_anual = utilizadaActual - quantity;
+                    diaLicencia.disponible_anual = disponibleActual + quantity;
+
+                    console.log('✅ RESTAURACIÓN CORREGIDA DIAS:', {
+                      utilizadaAnterior: utilizadaActual,
+                      disponibleAnterior: disponibleActual,
+                      cantidadRestaurada: quantity,
+                      utilizadaNueva: diaLicencia.utilizada_anual,
+                      disponibleNueva: diaLicencia.disponible_anual
+                    });
                   }
                 } else {
-                  // Si es del año actual, restaurar disponibilidad actual
+                  // Si no hay fecha de inicio, restaurar año actual
                   // ✅ CONVERTIR A NÚMEROS PARA ASEGURAR CÁLCULOS CORRECTOS
-                  const utilizadaActual = typeof diaLicencia.utilizada_anual === 'string' 
-                    ? parseFloat(diaLicencia.utilizada_anual) 
+                  const utilizadaActual = typeof diaLicencia.utilizada_anual === 'string'
+                    ? parseFloat(diaLicencia.utilizada_anual)
                     : (diaLicencia.utilizada_anual || 0);
-                  const disponibleActual = typeof diaLicencia.disponible_anual === 'string' 
-                    ? parseFloat(diaLicencia.disponible_anual) 
+                  const disponibleActual = typeof diaLicencia.disponible_anual === 'string'
+                    ? parseFloat(diaLicencia.disponible_anual)
                     : (diaLicencia.disponible_anual || 0);
-                  
+
                   diaLicencia.utilizada_anual = utilizadaActual - quantity;
                   diaLicencia.disponible_anual = disponibleActual + quantity;
-                  
-                  console.log('✅ RESTAURACIÓN CORREGIDA DIAS:', {
+
+                  console.log('✅ RESTAURACIÓN CORREGIDA DIAS (sin fecha):', {
                     utilizadaAnterior: utilizadaActual,
                     disponibleAnterior: disponibleActual,
                     cantidadRestaurada: quantity,
@@ -409,26 +486,6 @@ export class LicenseService {
                     disponibleNueva: diaLicencia.disponible_anual
                   });
                 }
-              } else {
-                // Si no hay fecha de inicio, restaurar año actual
-                // ✅ CONVERTIR A NÚMEROS PARA ASEGURAR CÁLCULOS CORRECTOS
-                const utilizadaActual = typeof diaLicencia.utilizada_anual === 'string' 
-                  ? parseFloat(diaLicencia.utilizada_anual) 
-                  : (diaLicencia.utilizada_anual || 0);
-                const disponibleActual = typeof diaLicencia.disponible_anual === 'string' 
-                  ? parseFloat(diaLicencia.disponible_anual) 
-                  : (diaLicencia.disponible_anual || 0);
-                
-                diaLicencia.utilizada_anual = utilizadaActual - quantity;
-                diaLicencia.disponible_anual = disponibleActual + quantity;
-                
-                console.log('✅ RESTAURACIÓN CORREGIDA DIAS (sin fecha):', {
-                  utilizadaAnterior: utilizadaActual,
-                  disponibleAnterior: disponibleActual,
-                  cantidadRestaurada: quantity,
-                  utilizadaNueva: diaLicencia.utilizada_anual,
-                  disponibleNueva: diaLicencia.disponible_anual
-                });
               }
             } else if (licenseType.periodo_control === 'mensual') {
               // ✅ CONVERTIR A NÚMEROS PARA ASEGURAR CÁLCULOS CORRECTOS
@@ -639,47 +696,91 @@ export class LicenseService {
           const diaLicencia = disponibilidad.licencias_dias?.[licenseTypeCode];
           if (diaLicencia) {
             if (licenseType.periodo_control === 'anual') {
-              // ✅ NUEVO: Manejo especial para permisos anuales retroactivos
-              if (startDate) {
-                const permisoYear = startDate.getFullYear();
-                const currentYear = getCurrentDateInElSalvador().getFullYear();
-                
-                // Si el permiso es de un año anterior, actualizar el historial de ese año
-                if (permisoYear < currentYear) {
-                  // Inicializar historial anual si no existe
-                  if (!diaLicencia.uso_anual) {
-                    diaLicencia.uso_anual = {};
+              // ✅ MANEJO ESPECIAL PARA VGA12 (VACACIONES ACUMULATIVAS)
+              if (licenseTypeCode === 'VGA12') {
+                // Para VGA12, solo actualizar contadores anuales, el acumulado permanece
+                // ✅ CONVERTIR A NÚMEROS PARA ASEGURAR CÁLCULOS CORRECTOS
+                const utilizadaActual = typeof diaLicencia.utilizada_anual === 'string'
+                  ? parseFloat(diaLicencia.utilizada_anual)
+                  : (diaLicencia.utilizada_anual || 0);
+                const disponibleActual = typeof diaLicencia.disponible_anual === 'string'
+                  ? parseFloat(diaLicencia.disponible_anual)
+                  : (diaLicencia.disponible_anual || 0);
+
+                diaLicencia.utilizada_anual = utilizadaActual + quantity;
+                diaLicencia.disponible_anual = disponibleActual - quantity;
+
+                console.log('✅ VGA12 ACTUALIZADO:', {
+                  utilizadaAnterior: utilizadaActual,
+                  disponibleAnterior: disponibleActual,
+                  cantidadAgregada: quantity,
+                  acumulado_total: diaLicencia.acumulado_total,
+                  utilizadaNueva: diaLicencia.utilizada_anual,
+                  disponibleNueva: diaLicencia.disponible_anual
+                });
+              } else {
+                // ✅ NUEVO: Manejo especial para permisos anuales retroactivos
+                if (startDate) {
+                  const permisoYear = startDate.getFullYear();
+                  const currentYear = getCurrentDateInElSalvador().getFullYear();
+
+                  // Si el permiso es de un año anterior, actualizar el historial de ese año
+                  if (permisoYear < currentYear) {
+                    // Inicializar historial anual si no existe
+                    if (!diaLicencia.uso_anual) {
+                      diaLicencia.uso_anual = {};
+                    }
+
+                    const yearKey = permisoYear.toString();
+
+                    // Actualizar el año del permiso
+                    if (!diaLicencia.uso_anual[yearKey]) {
+                      diaLicencia.uso_anual[yearKey] = {
+                        utilizada: 0,
+                        disponible: diaLicencia.asignada_anual || 15,
+                        asignada: diaLicencia.asignada_anual || 15
+                      };
+                    }
+
+                    diaLicencia.uso_anual[yearKey].utilizada += quantity;
+                    diaLicencia.uso_anual[yearKey].disponible -= quantity;
+
+                    console.log(`✅ Permiso anual retroactivo registrado para ${yearKey}: ${quantity} días`);
+                  } else {
+                    // Si es del año actual, afectar disponibilidad actual
+                    // ✅ CONVERTIR A NÚMEROS PARA ASEGURAR CÁLCULOS CORRECTOS
+                    const utilizadaActual = typeof diaLicencia.utilizada_anual === 'string'
+                      ? parseFloat(diaLicencia.utilizada_anual)
+                      : (diaLicencia.utilizada_anual || 0);
+                    const disponibleActual = typeof diaLicencia.disponible_anual === 'string'
+                      ? parseFloat(diaLicencia.disponible_anual)
+                      : (diaLicencia.disponible_anual || 0);
+
+                    diaLicencia.utilizada_anual = utilizadaActual + quantity;
+                    diaLicencia.disponible_anual = disponibleActual - quantity;
+
+                    console.log('✅ CÁLCULO CORREGIDO DIAS:', {
+                      utilizadaAnterior: utilizadaActual,
+                      disponibleAnterior: disponibleActual,
+                      cantidadAgregada: quantity,
+                      utilizadaNueva: diaLicencia.utilizada_anual,
+                      disponibleNueva: diaLicencia.disponible_anual
+                    });
                   }
-                  
-                  const yearKey = permisoYear.toString();
-                  
-                  // Actualizar el año del permiso
-                  if (!diaLicencia.uso_anual[yearKey]) {
-                    diaLicencia.uso_anual[yearKey] = { 
-                      utilizada: 0, 
-                      disponible: diaLicencia.asignada_anual || 15,
-                      asignada: diaLicencia.asignada_anual || 15 
-                    };
-                  }
-                  
-                  diaLicencia.uso_anual[yearKey].utilizada += quantity;
-                  diaLicencia.uso_anual[yearKey].disponible -= quantity;
-                  
-                  console.log(`✅ Permiso anual retroactivo registrado para ${yearKey}: ${quantity} días`);
                 } else {
-                  // Si es del año actual, afectar disponibilidad actual
+                  // Si no hay fecha de inicio, afectar año actual (comportamiento por defecto)
                   // ✅ CONVERTIR A NÚMEROS PARA ASEGURAR CÁLCULOS CORRECTOS
-                  const utilizadaActual = typeof diaLicencia.utilizada_anual === 'string' 
-                    ? parseFloat(diaLicencia.utilizada_anual) 
+                  const utilizadaActual = typeof diaLicencia.utilizada_anual === 'string'
+                    ? parseFloat(diaLicencia.utilizada_anual)
                     : (diaLicencia.utilizada_anual || 0);
-                  const disponibleActual = typeof diaLicencia.disponible_anual === 'string' 
-                    ? parseFloat(diaLicencia.disponible_anual) 
+                  const disponibleActual = typeof diaLicencia.disponible_anual === 'string'
+                    ? parseFloat(diaLicencia.disponible_anual)
                     : (diaLicencia.disponible_anual || 0);
-                  
+
                   diaLicencia.utilizada_anual = utilizadaActual + quantity;
                   diaLicencia.disponible_anual = disponibleActual - quantity;
-                  
-                  console.log('✅ CÁLCULO CORREGIDO DIAS:', {
+
+                  console.log('✅ CÁLCULO CORREGIDO DIAS (sin fecha):', {
                     utilizadaAnterior: utilizadaActual,
                     disponibleAnterior: disponibleActual,
                     cantidadAgregada: quantity,
@@ -687,26 +788,6 @@ export class LicenseService {
                     disponibleNueva: diaLicencia.disponible_anual
                   });
                 }
-              } else {
-                // Si no hay fecha de inicio, afectar año actual (comportamiento por defecto)
-                // ✅ CONVERTIR A NÚMEROS PARA ASEGURAR CÁLCULOS CORRECTOS
-                const utilizadaActual = typeof diaLicencia.utilizada_anual === 'string' 
-                  ? parseFloat(diaLicencia.utilizada_anual) 
-                  : (diaLicencia.utilizada_anual || 0);
-                const disponibleActual = typeof diaLicencia.disponible_anual === 'string' 
-                  ? parseFloat(diaLicencia.disponible_anual) 
-                  : (diaLicencia.disponible_anual || 0);
-                
-                diaLicencia.utilizada_anual = utilizadaActual + quantity;
-                diaLicencia.disponible_anual = disponibleActual - quantity;
-                
-                console.log('✅ CÁLCULO CORREGIDO DIAS (sin fecha):', {
-                  utilizadaAnterior: utilizadaActual,
-                  disponibleAnterior: disponibleActual,
-                  cantidadAgregada: quantity,
-                  utilizadaNueva: diaLicencia.utilizada_anual,
-                  disponibleNueva: diaLicencia.disponible_anual
-                });
               }
             } else if (licenseType.periodo_control === 'mensual') {
               // ✅ CONVERTIR A NÚMEROS PARA ASEGURAR CÁLCULOS CORRECTOS
@@ -892,27 +973,54 @@ export class LicenseService {
                });
              }
              
-             disponibilidad.licencias_dias[licenseType.codigo] = {
-               codigo: licenseType.codigo,
-               nombre: licenseType.nombre,
-               categoria: 'DIAS',
-               periodo_control: licenseType.periodo_control,
-               asignada_anual: licenseType.periodo_control === 'anual' ? licenseType.cantidad_maxima : 0,
-               utilizada_anual: 0,
-               disponible_anual: licenseType.periodo_control === 'anual' ? licenseType.cantidad_maxima : 0,
-               asignada_mensual: licenseType.periodo_control === 'mensual' ? licenseType.cantidad_maxima : 0,
-               utilizada_mes_actual: 0,
-               disponible_mes_actual: licenseType.periodo_control === 'mensual' ? licenseType.cantidad_maxima : 0,
-               asignada_por_embarazo: licenseType.codigo === 'MG07' ? licenseType.cantidad_maxima : 0,
-               utilizada_embarazo_actual: 0,
-               disponible_embarazo_actual: licenseType.codigo === 'MG07' ? licenseType.cantidad_maxima : 0,
-               unidad: licenseType.unidad_control,
-               ...(licenseType.aplica_genero && { aplica_genero: licenseType.aplica_genero }),
-               embarazo_activo: false,
-               uso_mensual: {},
-               solicitudes_activas: [],
-               ultima_actualizacion: getCurrentDateInElSalvador(),
-             };
+             // ✅ MANEJO ESPECIAL PARA VGA12 (VACACIONES ACUMULATIVAS)
+            if (licenseType.codigo === 'VGA12') {
+              disponibilidad.licencias_dias[licenseType.codigo] = {
+                codigo: licenseType.codigo,
+                nombre: licenseType.nombre,
+                categoria: 'DIAS',
+                periodo_control: licenseType.periodo_control,
+                asignada_anual: licenseType.cantidad_maxima, // 15 días por año (acumulables)
+                utilizada_anual: 0,
+                disponible_anual: licenseType.cantidad_maxima, // 15 días disponibles inicialmente
+                acumulado_total: 0, // Días acumulados de años anteriores
+                max_acumulacion: licenseType.max_acumulacion || 90, // Máximo 90 días acumulados
+                asignada_mensual: 0,
+                utilizada_mes_actual: 0,
+                disponible_mes_actual: 0,
+                asignada_por_embarazo: 0,
+                utilizada_embarazo_actual: 0,
+                disponible_embarazo_actual: 0,
+                unidad: licenseType.unidad_control,
+                ...(licenseType.aplica_genero && { aplica_genero: licenseType.aplica_genero }),
+                embarazo_activo: false,
+                uso_mensual: {},
+                solicitudes_activas: [],
+                ultima_actualizacion: getCurrentDateInElSalvador(),
+              };
+            } else {
+              disponibilidad.licencias_dias[licenseType.codigo] = {
+                codigo: licenseType.codigo,
+                nombre: licenseType.nombre,
+                categoria: 'DIAS',
+                periodo_control: licenseType.periodo_control,
+                asignada_anual: licenseType.periodo_control === 'anual' ? licenseType.cantidad_maxima : 0,
+                utilizada_anual: 0,
+                disponible_anual: licenseType.periodo_control === 'anual' ? licenseType.cantidad_maxima : 0,
+                asignada_mensual: licenseType.periodo_control === 'mensual' ? licenseType.cantidad_maxima : 0,
+                utilizada_mes_actual: 0,
+                disponible_mes_actual: licenseType.periodo_control === 'mensual' ? licenseType.cantidad_maxima : 0,
+                asignada_por_embarazo: licenseType.codigo === 'MG07' ? licenseType.cantidad_maxima : 0,
+                utilizada_embarazo_actual: 0,
+                disponible_embarazo_actual: licenseType.codigo === 'MG07' ? licenseType.cantidad_maxima : 0,
+                unidad: licenseType.unidad_control,
+                ...(licenseType.aplica_genero && { aplica_genero: licenseType.aplica_genero }),
+                embarazo_activo: false,
+                uso_mensual: {},
+                solicitudes_activas: [],
+                ultima_actualizacion: getCurrentDateInElSalvador(),
+              };
+            }
             break;
 
           case 'OCASION':
@@ -1031,6 +1139,76 @@ export class LicenseService {
     }
   }
 
+  // Resetear disponibilidad mensual para todos los empleados
+  static async resetAllMonthlyAvailability(): Promise<{ success: number; failed: number }> {
+    try {
+      console.log('🔄 Iniciando reset mensual masivo de disponibilidad...');
+
+      const employeesSnapshot = await getDocs(collection(db, this.employeesCollection));
+      console.log(`📋 Encontrados ${employeesSnapshot.size} empleados para reset mensual`);
+
+      let success = 0;
+      let failed = 0;
+
+      // Procesar empleados individualmente para mejor control de errores
+      for (const employeeDoc of employeesSnapshot.docs) {
+        try {
+          const employeeId = employeeDoc.id;
+          console.log(`🔄 Procesando reset mensual para empleado: ${employeeId}`);
+
+          await this.renewMonthlyAvailability(employeeId);
+          success++;
+          console.log(`✅ Reset mensual completado para empleado: ${employeeId}`);
+        } catch (error) {
+          console.error(`❌ Error en reset mensual para empleado ${employeeDoc.id}:`, error);
+          failed++;
+        }
+      }
+
+      console.log(`📊 Reset mensual masivo completado: ${success} exitosos, ${failed} fallidos`);
+      return { success, failed };
+
+    } catch (error) {
+      console.error('❌ Error general en reset mensual masivo:', error);
+      throw new Error('Error al resetear disponibilidad mensual masiva');
+    }
+  }
+
+  // Resetear disponibilidad anual para todos los empleados
+  static async resetAllAnnualAvailability(): Promise<{ success: number; failed: number }> {
+    try {
+      console.log('🔄 Iniciando reset anual masivo de disponibilidad...');
+
+      const employeesSnapshot = await getDocs(collection(db, this.employeesCollection));
+      console.log(`📋 Encontrados ${employeesSnapshot.size} empleados para reset anual`);
+
+      let success = 0;
+      let failed = 0;
+
+      // Procesar empleados individualmente para mejor control de errores
+      for (const employeeDoc of employeesSnapshot.docs) {
+        try {
+          const employeeId = employeeDoc.id;
+          console.log(`🔄 Procesando reset anual para empleado: ${employeeId}`);
+
+          await this.renewAnnualAvailability(employeeId);
+          success++;
+          console.log(`✅ Reset anual completado para empleado: ${employeeId}`);
+        } catch (error) {
+          console.error(`❌ Error en reset anual para empleado ${employeeDoc.id}:`, error);
+          failed++;
+        }
+      }
+
+      console.log(`📊 Reset anual masivo completado: ${success} exitosos, ${failed} fallidos`);
+      return { success, failed };
+
+    } catch (error) {
+      console.error('❌ Error general en reset anual masivo:', error);
+      throw new Error('Error al resetear disponibilidad anual masiva');
+    }
+  }
+
   // Limpiar e inicializar disponibilidad de OM14 y CT15
   static async cleanMonthlyOcasionAvailability(employeeId: string): Promise<void> {
     try {
@@ -1111,9 +1289,11 @@ export class LicenseService {
   static async renewAnnualAvailability(employeeId: string): Promise<void> {
     try {
       console.log(`🔄 Renovando disponibilidad anual para empleado: ${employeeId}`);
-      
+      console.log(`🔐 Usuario actual: ${auth.currentUser?.uid || 'No autenticado'}`);
+
       const employee = await this.getEmployeeById(employeeId);
       if (!employee?.disponibilidad) {
+        console.log(`❌ Empleado ${employeeId} no encontrado o sin disponibilidad`);
         throw new Error('Empleado o disponibilidad no encontrada');
       }
 
@@ -1136,10 +1316,32 @@ export class LicenseService {
 
             case 'DIAS':
               if (disponibilidad.licencias_dias[licenseType.codigo]) {
-                disponibilidad.licencias_dias[licenseType.codigo].asignada_anual = licenseType.cantidad_maxima;
-                disponibilidad.licencias_dias[licenseType.codigo].utilizada_anual = 0;
-                disponibilidad.licencias_dias[licenseType.codigo].disponible_anual = licenseType.cantidad_maxima;
-                disponibilidad.licencias_dias[licenseType.codigo].ultima_actualizacion = new Date();
+                // ✅ MANEJO ESPECIAL PARA VGA12 (VACACIONES ACUMULATIVAS)
+                if (licenseType.codigo === 'VGA12') {
+                  const vga12 = disponibilidad.licencias_dias[licenseType.codigo];
+
+                  // Calcular días no utilizados del año anterior
+                  const diasNoUtilizados = vga12.disponible_anual;
+                  const maxAcumulacion = licenseType.max_acumulacion || 90;
+
+                  // Acumular días no utilizados (respetando el máximo)
+                  const nuevoAcumulado = Math.min(vga12.acumulado_total + diasNoUtilizados, maxAcumulacion);
+
+                  // Reiniciar el año actual
+                  vga12.asignada_anual = licenseType.cantidad_maxima; // 15 días nuevos
+                  vga12.utilizada_anual = 0;
+                  vga12.disponible_anual = licenseType.cantidad_maxima + (nuevoAcumulado - vga12.acumulado_total); // 15 + acumulado
+                  vga12.acumulado_total = nuevoAcumulado; // Actualizar total acumulado
+                  vga12.ultima_actualizacion = new Date();
+
+                  console.log(`🔄 VGA12 renovado: +${diasNoUtilizados} días acumulados, total acumulado: ${nuevoAcumulado}/${maxAcumulacion}`);
+                } else {
+                  // Renovación normal para otros tipos de días
+                  disponibilidad.licencias_dias[licenseType.codigo].asignada_anual = licenseType.cantidad_maxima;
+                  disponibilidad.licencias_dias[licenseType.codigo].utilizada_anual = 0;
+                  disponibilidad.licencias_dias[licenseType.codigo].disponible_anual = licenseType.cantidad_maxima;
+                  disponibilidad.licencias_dias[licenseType.codigo].ultima_actualizacion = new Date();
+                }
               }
               break;
           }
@@ -1167,9 +1369,11 @@ export class LicenseService {
   static async renewMonthlyAvailability(employeeId: string): Promise<void> {
     try {
       console.log(`🔄 Renovando disponibilidad mensual para empleado: ${employeeId}`);
-      
+      console.log(`🔐 Usuario actual: ${auth.currentUser?.uid || 'No autenticado'}`);
+
       const employee = await this.getEmployeeById(employeeId);
       if (!employee?.disponibilidad) {
+        console.log(`❌ Empleado ${employeeId} no encontrado o sin disponibilidad`);
         throw new Error('Empleado o disponibilidad no encontrada');
       }
 
@@ -1189,6 +1393,77 @@ export class LicenseService {
                 disponibilidad.licencias_dias[licenseType.codigo].ultima_actualizacion = new Date();
               }
               break;
+            case 'OCASION': {
+              // Manejar licencias por ocasión con control mensual (OM14, CT15)
+              if (!disponibilidad.licencias_ocasion) {
+                disponibilidad.licencias_ocasion = {} as Record<string, LicenciaOcasion>;
+              }
+
+              // OM14
+              if (licenseType.codigo === 'OM14') {
+                if (!disponibilidad.licencias_ocasion.OM14) {
+                  disponibilidad.licencias_ocasion.OM14 = {
+                    codigo: 'OM14',
+                    nombre: 'Licencia por Olvido de Marcación',
+                    categoria: 'OCASION',
+                    periodo_control: 'mensual',
+                    asignada_mensual: licenseType.cantidad_maxima,
+                    max_por_solicitud: licenseType.max_por_solicitud,
+                    unidad: licenseType.unidad_control,
+                    utilizada_mes_actual: 0,
+                    disponible_mes_actual: licenseType.cantidad_maxima,
+                    uso_mensual: {},
+                    historial_uso: [],
+                    total_dias_año: 0,
+                    total_solicitudes_año: 0,
+                    solicitudes_activas: [],
+                    ultima_actualizacion: getCurrentDateInElSalvador(),
+                  } as unknown as LicenciaOcasion;
+                } else {
+                  const om14 = disponibilidad.licencias_ocasion.OM14;
+                  om14.periodo_control = 'mensual';
+                  om14.asignada_mensual = licenseType.cantidad_maxima;
+                  om14.utilizada_mes_actual = 0;
+                  om14.disponible_mes_actual = licenseType.cantidad_maxima;
+                  om14.max_por_solicitud = licenseType.max_por_solicitud;
+                  om14.unidad = licenseType.unidad_control;
+                  om14.ultima_actualizacion = getCurrentDateInElSalvador();
+                }
+              }
+
+              // CT15
+              if (licenseType.codigo === 'CT15') {
+                if (!disponibilidad.licencias_ocasion.CT15) {
+                  disponibilidad.licencias_ocasion.CT15 = {
+                    codigo: 'CT15',
+                    nombre: 'Licencia por Cambio de Turno',
+                    categoria: 'OCASION',
+                    periodo_control: 'mensual',
+                    asignada_mensual: licenseType.cantidad_maxima,
+                    max_por_solicitud: licenseType.max_por_solicitud,
+                    unidad: licenseType.unidad_control,
+                    utilizada_mes_actual: 0,
+                    disponible_mes_actual: licenseType.cantidad_maxima,
+                    uso_mensual: {},
+                    historial_uso: [],
+                    total_dias_año: 0,
+                    total_solicitudes_año: 0,
+                    solicitudes_activas: [],
+                    ultima_actualizacion: getCurrentDateInElSalvador(),
+                  } as unknown as LicenciaOcasion;
+                } else {
+                  const ct15 = disponibilidad.licencias_ocasion.CT15;
+                  ct15.periodo_control = 'mensual';
+                  ct15.asignada_mensual = licenseType.cantidad_maxima;
+                  ct15.utilizada_mes_actual = 0;
+                  ct15.disponible_mes_actual = licenseType.cantidad_maxima;
+                  ct15.max_por_solicitud = licenseType.max_por_solicitud;
+                  ct15.unidad = licenseType.unidad_control;
+                  ct15.ultima_actualizacion = getCurrentDateInElSalvador();
+                }
+              }
+              break;
+            }
           }
         }
       }
@@ -1283,16 +1558,69 @@ export class LicenseService {
   // Obtener solicitudes de un empleado
   static async getEmployeeLicenseRequests(employeeId: string): Promise<LicenseRequest[]> {
     try {
+      console.log('🔍 DEBUG getEmployeeLicenseRequests:', {
+        employeeId,
+        collection: this.licenseRequestsCollection,
+        auth: !!auth.currentUser,
+        userId: auth.currentUser?.uid
+      });
+
+      // Intentar primero sin orderBy para verificar permisos
+      const simpleQuery = query(
+        collection(db, this.licenseRequestsCollection),
+        where('employeeId', '==', employeeId)
+      );
+
+      console.log('🔍 DEBUG: Ejecutando consulta simple...');
+      const simpleSnapshot = await getDocs(simpleQuery);
+      console.log('✅ DEBUG: Consulta simple exitosa, documentos encontrados:', simpleSnapshot.size);
+
+      // Ahora intentar con orderBy
+      console.log('🔍 DEBUG: Ejecutando consulta con orderBy...');
       const q = query(
         collection(db, this.licenseRequestsCollection),
         where('employeeId', '==', employeeId),
         orderBy('createdAt', 'desc')
       );
+
       const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map(doc => this.mapDocumentToLicenseRequest(doc));
+      console.log('✅ DEBUG: Consulta completa exitosa, documentos encontrados:', querySnapshot.size);
+
+      const requests = querySnapshot.docs.map(doc => this.mapDocumentToLicenseRequest(doc));
+      console.log('✅ DEBUG: Mapeo completado, solicitudes procesadas:', requests.length);
+
+      // Si la consulta con orderBy falla, intentar sin orderBy como respaldo
+      if (requests.length === 0 && simpleSnapshot.size > 0) {
+        console.log('⚠️ DEBUG: orderBy falló pero hay datos sin ordenar, usando consulta simple...');
+        return simpleSnapshot.docs.map(doc => this.mapDocumentToLicenseRequest(doc));
+      }
+
+      return requests;
     } catch (error) {
-      console.error('Error getting employee license requests:', error);
-      throw new Error('Error al obtener solicitudes de licencia del empleado');
+      console.error('❌ Error getting employee license requests:', error);
+      console.error('❌ Detalles del error:', {
+        message: error.message,
+        code: error.code,
+        name: error.name
+      });
+
+      // Intentar consulta simple como respaldo si la consulta con orderBy falla
+      try {
+        console.log('🔄 DEBUG: Intentando consulta simple como respaldo...');
+        const simpleQuery = query(
+          collection(db, this.licenseRequestsCollection),
+          where('employeeId', '==', employeeId)
+        );
+        const simpleSnapshot = await getDocs(simpleQuery);
+        console.log('✅ DEBUG: Consulta de respaldo exitosa:', simpleSnapshot.size, 'documentos');
+
+        const requests = simpleSnapshot.docs.map(doc => this.mapDocumentToLicenseRequest(doc));
+        console.log('⚠️ DEBUG: Usando datos sin ordenar por fecha');
+        return requests;
+      } catch (fallbackError) {
+        console.error('❌ Error incluso en consulta de respaldo:', fallbackError);
+        throw new Error('Error al obtener solicitudes de licencia del empleado');
+      }
     }
   }
 
@@ -1446,6 +1774,7 @@ export class LicenseService {
       calculo_automatico_fecha_fin: data.calculo_automatico_fecha_fin,
       dias_calculo_automatico: data.dias_calculo_automatico,
       requiere_historial_anual: data.requiere_historial_anual,
+      max_acumulacion: data.max_acumulacion,
       createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
       updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : new Date(),
     };

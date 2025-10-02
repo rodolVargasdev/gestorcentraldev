@@ -42,6 +42,7 @@ const AVAILABLE_FIELDS = [
   { key: 'department', label: 'Departamento', required: true },
   { key: 'position', label: 'Puesto', required: true },
   { key: 'employeeType', label: 'Tipo de Empleado', required: true },
+  { key: 'isProfessionalService', label: 'Servicio Profesional', required: false },
   { key: 'gender', label: 'Género', required: false },
   { key: 'hireDate', label: 'Fecha de Contratación', required: true },
   { key: 'birthDate', label: 'Fecha de Nacimiento', required: false },
@@ -183,12 +184,17 @@ export const ExportEmployeesModal: React.FC<ExportEmployeesModalProps> = ({
         if (fieldKey === 'employeeType') {
           value = value === 'operativo' ? 'Operativo' : 'Administrativo';
         }
-        
+
+        // Formatear servicio profesional
+        if (fieldKey === 'isProfessionalService') {
+          value = value ? 'Sí' : 'No';
+        }
+
         // Formatear salario
         if (fieldKey === 'salary' && value) {
-          value = new Intl.NumberFormat('es-GT', {
+          value = new Intl.NumberFormat('es-SV', {
             style: 'currency',
-            currency: 'GTQ'
+            currency: 'USD'
           }).format(value);
         }
         

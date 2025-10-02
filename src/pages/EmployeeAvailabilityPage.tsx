@@ -162,9 +162,18 @@ export function EmployeeAvailabilityPage() {
     );
   }
 
-  const horasLicencias = Object.values(employeeAvailability.licencias_horas || {});
-  const diasLicencias = Object.values(employeeAvailability.licencias_dias || {});
-  const ocasionLicencias = Object.values(employeeAvailability.licencias_ocasion || {});
+  // Filtrar visibilidad para empleados de servicio profesional: solo OM14 y CT15
+  const isProfessional = currentEmployee?.isProfessionalService === true;
+
+  const horasAll = Object.values(employeeAvailability.licencias_horas || {});
+  const diasAll = Object.values(employeeAvailability.licencias_dias || {});
+  const ocasionAll = Object.values(employeeAvailability.licencias_ocasion || {});
+
+  const horasLicencias = isProfessional ? [] : horasAll;
+  const diasLicencias = isProfessional ? [] : diasAll;
+  const ocasionLicencias = isProfessional
+    ? ocasionAll.filter((l: LicenciaOcasion) => l.codigo === 'OM14' || l.codigo === 'CT15')
+    : ocasionAll;
 
   return (
     <div className="container mx-auto p-6">

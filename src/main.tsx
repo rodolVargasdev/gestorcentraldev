@@ -21,14 +21,31 @@ window.licenseStore = useLicenseStore;
 async function initializeLicensesIfNeeded() {
   try {
     console.log('🚀 INICIO: Verificando y actualizando tipos de licencias...');
-    
-    // ✅ FORZAR ACTUALIZACIÓN ESPECÍFICA DE LG08
-    console.log('🔄 FORZANDO ACTUALIZACIÓN DE LG08...');
+
+    // ✅ INICIALIZAR/ACTUALIZAR TODOS LOS TIPOS DE LICENCIAS
+    console.log('🔄 Inicializando tipos de licencias...');
     await LicenseService.initializeLicenseTypes();
-    
-    // ✅ VERIFICAR QUE LG08 SE ACTUALIZÓ CORRECTAMENTE
-    console.log('🔍 VERIFICANDO CONFIGURACIÓN DE LG08...');
+
+    // ✅ VERIFICAR QUE TODOS LOS TIPOS DE LICENCIAS EXISTEN
+    console.log('🔍 Verificando que todos los tipos de licencias existen...');
     const licenseTypes = await LicenseService.getAllLicenseTypes();
+
+    const expectedCodes = [
+      'PG01', 'PS02', 'GG05', 'VG11', 'LG08', 'MG07', 'OM14', 'CT15',
+      'EG03', 'ES04', 'DG06', 'AG09', 'JRV12', 'JU13', 'RH16'
+    ];
+
+    const existingCodes = licenseTypes.map((lt: { codigo: string }) => lt.codigo);
+    const missingCodes = expectedCodes.filter(code => !existingCodes.includes(code));
+
+    if (missingCodes.length > 0) {
+      console.error('❌ FALTAN TIPOS DE LICENCIAS:', missingCodes);
+      throw new Error(`Faltan ${missingCodes.length} tipos de licencias: ${missingCodes.join(', ')}`);
+    }
+
+    console.log(`✅ Todos los tipos de licencias están presentes (${licenseTypes.length}/${expectedCodes.length})`);
+
+    // ✅ VERIFICACIÓN ESPECÍFICA DE LG08
     const lg08 = licenseTypes.find((lt: { codigo: string }) => lt.codigo === 'LG08');
     if (lg08) {
       console.log('🍼 LG08 - CONFIGURACIÓN FINAL:', {
@@ -40,20 +57,12 @@ async function initializeLicensesIfNeeded() {
         calculo_automatico_fecha_fin: lg08.calculo_automatico_fecha_fin,
         dias_calculo_automatico: lg08.dias_calculo_automatico
       });
-      
-      if (lg08.unidad_control === 'dias' && lg08.max_por_solicitud === 180) {
-        console.log('✅ LG08 - CONFIGURACIÓN CORRECTA APLICADA');
-      } else {
-        console.log('❌ LG08 - CONFIGURACIÓN INCORRECTA:', {
-          unidad_control: lg08.unidad_control,
-          max_por_solicitud: lg08.max_por_solicitud
-        });
-      }
     }
-    
-    console.log('✅ FIN: Tipos de licencias verificados y actualizados');
+
+    console.log('✅ FIN: Tipos de licencias inicializados correctamente');
   } catch (error) {
     console.error('❌ Error inicializando tipos de licencias:', error);
+    // No lanzamos el error para que la aplicación siga funcionando
   }
 }
 

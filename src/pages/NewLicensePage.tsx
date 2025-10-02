@@ -155,7 +155,16 @@ export function NewLicensePage() {
         
         if (selectedLicenseType.periodo_control === 'mensual') {
           // Para licencias con control mensual (OM14, CT15)
-          const disponible = ocasionLicencia?.disponible_mes_actual || 0;
+          // Si no hay disponibilidad inicializada, usar el valor por defecto
+          let disponible = ocasionLicencia?.disponible_mes_actual;
+          if (disponible === undefined || disponible === null) {
+            // Usar valor por defecto según el tipo de licencia
+            disponible = selectedLicenseType.codigo === 'OM14' ? 2 : 3;
+            console.log('⚠️ DEBUG OCASION MENSUAL: Usando valor por defecto', {
+              codigo: selectedLicenseType.codigo,
+              disponible_por_defecto: disponible
+            });
+          }
           console.log('🔍 DEBUG OCASION MENSUAL en componente:', {
             codigo: selectedLicenseType.codigo,
             disponible_mes_actual: disponible,
@@ -744,11 +753,19 @@ export function NewLicensePage() {
                   className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="">Seleccionar...</option>
-                  {licenseTypes.map((licenseType) => (
-                    <option key={licenseType.codigo} value={licenseType.codigo}>
-                      {licenseType.codigo} - {licenseType.nombre}
-                    </option>
-                  ))}
+                  {licenseTypes
+                    .filter((licenseType) => {
+                      // Si es servicio profesional, solo mostrar OM14 y CT15
+                      if (currentEmployee?.isProfessionalService) {
+                        return licenseType.codigo === 'OM14' || licenseType.codigo === 'CT15';
+                      }
+                      return true;
+                    })
+                    .map((licenseType) => (
+                      <option key={licenseType.codigo} value={licenseType.codigo}>
+                        {licenseType.codigo} - {licenseType.nombre}
+                      </option>
+                    ))}
                 </select>
                 {errors.tipoLicencia && (
                   <p className="text-red-500 text-sm mt-1">{errors.tipoLicencia.message}</p>

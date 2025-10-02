@@ -1,0 +1,562 @@
+extend type Mutation {
+  """
+  ✨ Insert a single `Document` into the table and return its key. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  document_insert(
+    """
+    Data object to insert into the table.
+    """
+    data: Document_Data!
+  ): Document_KeyOutput! @fdc_generated(from: "Document", purpose: INSERT_SINGLE)
+  """
+  ✨ Insert a single `License` into the table and return its key. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  license_insert(
+    """
+    Data object to insert into the table.
+    """
+    data: License_Data!
+  ): License_KeyOutput! @fdc_generated(from: "License", purpose: INSERT_SINGLE)
+  """
+  ✨ Insert a single `LicenseType` into the table and return its key. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  licenseType_insert(
+    """
+    Data object to insert into the table.
+    """
+    data: LicenseType_Data!
+  ): LicenseType_KeyOutput! @fdc_generated(from: "LicenseType", purpose: INSERT_SINGLE)
+  """
+  ✨ Insert a single `Notification` into the table and return its key. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  notification_insert(
+    """
+    Data object to insert into the table.
+    """
+    data: Notification_Data!
+  ): Notification_KeyOutput! @fdc_generated(from: "Notification", purpose: INSERT_SINGLE)
+  """
+  ✨ Insert a single `User` into the table and return its key. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  user_insert(
+    """
+    Data object to insert into the table.
+    """
+    data: User_Data!
+  ): User_KeyOutput! @fdc_generated(from: "User", purpose: INSERT_SINGLE)
+  """
+  ✨ Insert `Document` objects into the table and return their keys. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  document_insertMany(
+    """
+    List of data objects to insert into the table.
+    """
+    data: [Document_Data!]!
+  ): [Document_KeyOutput!]! @fdc_generated(from: "Document", purpose: INSERT_MULTIPLE)
+  """
+  ✨ Insert `License` objects into the table and return their keys. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  license_insertMany(
+    """
+    List of data objects to insert into the table.
+    """
+    data: [License_Data!]!
+  ): [License_KeyOutput!]! @fdc_generated(from: "License", purpose: INSERT_MULTIPLE)
+  """
+  ✨ Insert `LicenseType` objects into the table and return their keys. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  licenseType_insertMany(
+    """
+    List of data objects to insert into the table.
+    """
+    data: [LicenseType_Data!]!
+  ): [LicenseType_KeyOutput!]! @fdc_generated(from: "LicenseType", purpose: INSERT_MULTIPLE)
+  """
+  ✨ Insert `Notification` objects into the table and return their keys. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  notification_insertMany(
+    """
+    List of data objects to insert into the table.
+    """
+    data: [Notification_Data!]!
+  ): [Notification_KeyOutput!]! @fdc_generated(from: "Notification", purpose: INSERT_MULTIPLE)
+  """
+  ✨ Insert `User` objects into the table and return their keys. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  user_insertMany(
+    """
+    List of data objects to insert into the table.
+    """
+    data: [User_Data!]!
+  ): [User_KeyOutput!]! @fdc_generated(from: "User", purpose: INSERT_MULTIPLE)
+  """
+  ✨ Insert or update a single `Document` into the table, based on the primary key. Returns the key of the newly inserted or existing updated `Document`.
+  """
+  document_upsert(
+    """
+    Data object to insert or update if it already exists.
+    """
+    data: Document_Data!
+  ): Document_KeyOutput! @fdc_generated(from: "Document", purpose: UPSERT_SINGLE)
+  """
+  ✨ Insert or update a single `License` into the table, based on the primary key. Returns the key of the newly inserted or existing updated `License`.
+  """
+  license_upsert(
+    """
+    Data object to insert or update if it already exists.
+    """
+    data: License_Data!
+  ): License_KeyOutput! @fdc_generated(from: "License", purpose: UPSERT_SINGLE)
+  """
+  ✨ Insert or update a single `LicenseType` into the table, based on the primary key. Returns the key of the newly inserted or existing updated `LicenseType`.
+  """
+  licenseType_upsert(
+    """
+    Data object to insert or update if it already exists.
+    """
+    data: LicenseType_Data!
+  ): LicenseType_KeyOutput! @fdc_generated(from: "LicenseType", purpose: UPSERT_SINGLE)
+  """
+  ✨ Insert or update a single `Notification` into the table, based on the primary key. Returns the key of the newly inserted or existing updated `Notification`.
+  """
+  notification_upsert(
+    """
+    Data object to insert or update if it already exists.
+    """
+    data: Notification_Data!
+  ): Notification_KeyOutput! @fdc_generated(from: "Notification", purpose: UPSERT_SINGLE)
+  """
+  ✨ Insert or update a single `User` into the table, based on the primary key. Returns the key of the newly inserted or existing updated `User`.
+  """
+  user_upsert(
+    """
+    Data object to insert or update if it already exists.
+    """
+    data: User_Data!
+  ): User_KeyOutput! @fdc_generated(from: "User", purpose: UPSERT_SINGLE)
+  """
+  ✨ Insert or update `Document` objects into the table, based on the primary key. Returns the key of the newly inserted or existing updated `Document`.
+  """
+  document_upsertMany(
+    """
+    List of data objects to insert or update if it already exists.
+    """
+    data: [Document_Data!]!
+  ): [Document_KeyOutput!]! @fdc_generated(from: "Document", purpose: UPSERT_MULTIPLE)
+  """
+  ✨ Insert or update `License` objects into the table, based on the primary key. Returns the key of the newly inserted or existing updated `License`.
+  """
+  license_upsertMany(
+    """
+    List of data objects to insert or update if it already exists.
+    """
+    data: [License_Data!]!
+  ): [License_KeyOutput!]! @fdc_generated(from: "License", purpose: UPSERT_MULTIPLE)
+  """
+  ✨ Insert or update `LicenseType` objects into the table, based on the primary key. Returns the key of the newly inserted or existing updated `LicenseType`.
+  """
+  licenseType_upsertMany(
+    """
+    List of data objects to insert or update if it already exists.
+    """
+    data: [LicenseType_Data!]!
+  ): [LicenseType_KeyOutput!]! @fdc_generated(from: "LicenseType", purpose: UPSERT_MULTIPLE)
+  """
+  ✨ Insert or update `Notification` objects into the table, based on the primary key. Returns the key of the newly inserted or existing updated `Notification`.
+  """
+  notification_upsertMany(
+    """
+    List of data objects to insert or update if it already exists.
+    """
+    data: [Notification_Data!]!
+  ): [Notification_KeyOutput!]! @fdc_generated(from: "Notification", purpose: UPSERT_MULTIPLE)
+  """
+  ✨ Insert or update `User` objects into the table, based on the primary key. Returns the key of the newly inserted or existing updated `User`.
+  """
+  user_upsertMany(
+    """
+    List of data objects to insert or update if it already exists.
+    """
+    data: [User_Data!]!
+  ): [User_KeyOutput!]! @fdc_generated(from: "User", purpose: UPSERT_MULTIPLE)
+  """
+  ✨ Update a single `Document` based on `id`, `key` or `first`, setting columns specified in `data`. Returns the key of the updated `Document` or `null` if not found.
+  """
+  document_update(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: Document_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: Document_FirstRow
+
+    """
+    Data object containing fields to be updated.
+    """
+    data: Document_Data!
+  ): Document_KeyOutput @fdc_generated(from: "Document", purpose: UPDATE_SINGLE)
+  """
+  ✨ Update a single `License` based on `id`, `key` or `first`, setting columns specified in `data`. Returns the key of the updated `License` or `null` if not found.
+  """
+  license_update(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: License_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: License_FirstRow
+
+    """
+    Data object containing fields to be updated.
+    """
+    data: License_Data!
+  ): License_KeyOutput @fdc_generated(from: "License", purpose: UPDATE_SINGLE)
+  """
+  ✨ Update a single `LicenseType` based on `id`, `key` or `first`, setting columns specified in `data`. Returns the key of the updated `LicenseType` or `null` if not found.
+  """
+  licenseType_update(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: LicenseType_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: LicenseType_FirstRow
+
+    """
+    Data object containing fields to be updated.
+    """
+    data: LicenseType_Data!
+  ): LicenseType_KeyOutput @fdc_generated(from: "LicenseType", purpose: UPDATE_SINGLE)
+  """
+  ✨ Update a single `Notification` based on `id`, `key` or `first`, setting columns specified in `data`. Returns the key of the updated `Notification` or `null` if not found.
+  """
+  notification_update(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: Notification_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: Notification_FirstRow
+
+    """
+    Data object containing fields to be updated.
+    """
+    data: Notification_Data!
+  ): Notification_KeyOutput @fdc_generated(from: "Notification", purpose: UPDATE_SINGLE)
+  """
+  ✨ Update a single `User` based on `id`, `key` or `first`, setting columns specified in `data`. Returns the key of the updated `User` or `null` if not found.
+  """
+  user_update(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: User_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: User_FirstRow
+
+    """
+    Data object containing fields to be updated.
+    """
+    data: User_Data!
+  ): User_KeyOutput @fdc_generated(from: "User", purpose: UPDATE_SINGLE)
+  """
+  ✨ Update `Document` objects matching `where` conditions (or `all`, if true) according to `data`. Returns the number of rows updated.
+  """
+  document_updateMany(
+    """
+    Filter condition to specify which rows to update.
+    """
+    where: Document_Filter
+
+    """
+    Set to true to update all rows.
+    """
+    all: Boolean = false
+
+    """
+    Data object containing fields to update.
+    """
+    data: Document_Data!
+  ): Int! @fdc_generated(from: "Document", purpose: UPDATE_MULTIPLE)
+  """
+  ✨ Update `License` objects matching `where` conditions (or `all`, if true) according to `data`. Returns the number of rows updated.
+  """
+  license_updateMany(
+    """
+    Filter condition to specify which rows to update.
+    """
+    where: License_Filter
+
+    """
+    Set to true to update all rows.
+    """
+    all: Boolean = false
+
+    """
+    Data object containing fields to update.
+    """
+    data: License_Data!
+  ): Int! @fdc_generated(from: "License", purpose: UPDATE_MULTIPLE)
+  """
+  ✨ Update `LicenseType` objects matching `where` conditions (or `all`, if true) according to `data`. Returns the number of rows updated.
+  """
+  licenseType_updateMany(
+    """
+    Filter condition to specify which rows to update.
+    """
+    where: LicenseType_Filter
+
+    """
+    Set to true to update all rows.
+    """
+    all: Boolean = false
+
+    """
+    Data object containing fields to update.
+    """
+    data: LicenseType_Data!
+  ): Int! @fdc_generated(from: "LicenseType", purpose: UPDATE_MULTIPLE)
+  """
+  ✨ Update `Notification` objects matching `where` conditions (or `all`, if true) according to `data`. Returns the number of rows updated.
+  """
+  notification_updateMany(
+    """
+    Filter condition to specify which rows to update.
+    """
+    where: Notification_Filter
+
+    """
+    Set to true to update all rows.
+    """
+    all: Boolean = false
+
+    """
+    Data object containing fields to update.
+    """
+    data: Notification_Data!
+  ): Int! @fdc_generated(from: "Notification", purpose: UPDATE_MULTIPLE)
+  """
+  ✨ Update `User` objects matching `where` conditions (or `all`, if true) according to `data`. Returns the number of rows updated.
+  """
+  user_updateMany(
+    """
+    Filter condition to specify which rows to update.
+    """
+    where: User_Filter
+
+    """
+    Set to true to update all rows.
+    """
+    all: Boolean = false
+
+    """
+    Data object containing fields to update.
+    """
+    data: User_Data!
+  ): Int! @fdc_generated(from: "User", purpose: UPDATE_MULTIPLE)
+  """
+  ✨ Delete a single `Document` based on `id`, `key` or `first` and return its key (or `null` if not found).
+  """
+  document_delete(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: Document_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: Document_FirstRow
+  ): Document_KeyOutput @fdc_generated(from: "Document", purpose: DELETE_SINGLE)
+  """
+  ✨ Delete a single `License` based on `id`, `key` or `first` and return its key (or `null` if not found).
+  """
+  license_delete(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: License_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: License_FirstRow
+  ): License_KeyOutput @fdc_generated(from: "License", purpose: DELETE_SINGLE)
+  """
+  ✨ Delete a single `LicenseType` based on `id`, `key` or `first` and return its key (or `null` if not found).
+  """
+  licenseType_delete(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: LicenseType_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: LicenseType_FirstRow
+  ): LicenseType_KeyOutput @fdc_generated(from: "LicenseType", purpose: DELETE_SINGLE)
+  """
+  ✨ Delete a single `Notification` based on `id`, `key` or `first` and return its key (or `null` if not found).
+  """
+  notification_delete(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: Notification_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: Notification_FirstRow
+  ): Notification_KeyOutput @fdc_generated(from: "Notification", purpose: DELETE_SINGLE)
+  """
+  ✨ Delete a single `User` based on `id`, `key` or `first` and return its key (or `null` if not found).
+  """
+  user_delete(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: User_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: User_FirstRow
+  ): User_KeyOutput @fdc_generated(from: "User", purpose: DELETE_SINGLE)
+  """
+  ✨ Delete `Document` objects matching `where` conditions (or `all`, if true). Returns the number of rows deleted.
+  """
+  document_deleteMany(
+    """
+    Filter condition to specify which rows to delete.
+    """
+    where: Document_Filter
+
+    """
+    Set to true to delete all rows.
+    """
+    all: Boolean = false
+  ): Int! @fdc_generated(from: "Document", purpose: DELETE_MULTIPLE)
+  """
+  ✨ Delete `License` objects matching `where` conditions (or `all`, if true). Returns the number of rows deleted.
+  """
+  license_deleteMany(
+    """
+    Filter condition to specify which rows to delete.
+    """
+    where: License_Filter
+
+    """
+    Set to true to delete all rows.
+    """
+    all: Boolean = false
+  ): Int! @fdc_generated(from: "License", purpose: DELETE_MULTIPLE)
+  """
+  ✨ Delete `LicenseType` objects matching `where` conditions (or `all`, if true). Returns the number of rows deleted.
+  """
+  licenseType_deleteMany(
+    """
+    Filter condition to specify which rows to delete.
+    """
+    where: LicenseType_Filter
+
+    """
+    Set to true to delete all rows.
+    """
+    all: Boolean = false
+  ): Int! @fdc_generated(from: "LicenseType", purpose: DELETE_MULTIPLE)
+  """
+  ✨ Delete `Notification` objects matching `where` conditions (or `all`, if true). Returns the number of rows deleted.
+  """
+  notification_deleteMany(
+    """
+    Filter condition to specify which rows to delete.
+    """
+    where: Notification_Filter
+
+    """
+    Set to true to delete all rows.
+    """
+    all: Boolean = false
+  ): Int! @fdc_generated(from: "Notification", purpose: DELETE_MULTIPLE)
+  """
+  ✨ Delete `User` objects matching `where` conditions (or `all`, if true). Returns the number of rows deleted.
+  """
+  user_deleteMany(
+    """
+    Filter condition to specify which rows to delete.
+    """
+    where: User_Filter
+
+    """
+    Set to true to delete all rows.
+    """
+    all: Boolean = false
+  ): Int! @fdc_generated(from: "User", purpose: DELETE_MULTIPLE)
+}

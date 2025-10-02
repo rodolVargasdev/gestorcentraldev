@@ -31,6 +31,7 @@ interface EmployeeFormData {
   emergencyContactName: string;
   emergencyContactPhone: string;
   emergencyContactRelationship: string;
+  isProfessionalService: boolean;
 }
 
 const DEPARTMENTS = [
@@ -81,7 +82,8 @@ export const NewEmployeePage: React.FC = () => {
       address: '',
       emergencyContactName: '',
       emergencyContactPhone: '',
-      emergencyContactRelationship: ''
+      emergencyContactRelationship: '',
+      isProfessionalService: false
     }
   });
 
@@ -116,6 +118,7 @@ export const NewEmployeePage: React.FC = () => {
         hireDate: new Date(data.hireDate),
         salary: data.salary || 0,
         isActive: true,
+        isProfessionalService: !!data.isProfessionalService,
         gender: data.gender,
         birthDate: data.birthDate ? new Date(data.birthDate) : new Date(),
         address: data.address || '',
@@ -413,8 +416,25 @@ export const NewEmployeePage: React.FC = () => {
                  </div>
 
                 <div>
+                  <label className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      {...register('isProfessionalService')}
+                      className="rounded border-gray-300 text-green-600 shadow-sm focus:border-green-500 focus:ring-green-500"
+                      required={true}
+                    />
+                    <span className="text-sm font-medium text-gray-700">
+                      Es de servicio profesional
+                    </span>
+                  </label>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Los empleados de servicio profesional solo pueden solicitar permisos de olvido de marcación y cambio de turno.
+                  </p>
+                </div>
+
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Salario (Q)
+                    Salario ($)
                   </label>
                   <Input
                     {...register('salary', { 

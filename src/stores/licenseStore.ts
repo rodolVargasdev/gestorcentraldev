@@ -61,6 +61,10 @@ interface LicenseActions {
   
   // Renovar disponibilidad mensual
   renewMonthlyAvailability: (employeeId: string) => Promise<void>;
+
+  // Reset masivo de disponibilidad
+  resetAllAnnualAvailability: () => Promise<{ success: number; failed: number }>;
+  resetAllMonthlyAvailability: () => Promise<{ success: number; failed: number }>;
   
   // Limpiar disponibilidad corrupta de VG11
   cleanVG11Availability: (employeeId: string) => Promise<void>;
@@ -280,12 +284,12 @@ export const useLicenseStore = create<LicenseStore>()(
         try {
           set({ isRenewing: true, error: null });
           console.log(`🔄 Renovando disponibilidad mensual para empleado: ${employeeId}`);
-          
+
           await LicenseService.renewMonthlyAvailability(employeeId);
-          
+
           // Recargar disponibilidad después de renovar
           await get().loadEmployeeAvailability(employeeId);
-          
+
           set({ isRenewing: false });
           console.log(`✅ Disponibilidad mensual renovada para empleado: ${employeeId}`);
         } catch (error: unknown) {
@@ -295,6 +299,49 @@ export const useLicenseStore = create<LicenseStore>()(
             isRenewing: false,
           });
           console.error('❌ Error en renewMonthlyAvailability:', error);
+        }
+      },
+
+      // Reset masivo de disponibilidad
+      resetAllAnnualAvailability: async () => {
+        try {
+          set({ isRenewing: true, error: null });
+          console.log('🔄 Reseteando disponibilidad anual para todos los empleados...');
+
+          const result = await LicenseService.resetAllAnnualAvailability();
+
+          set({ isRenewing: false });
+          console.log(`✅ Reset anual masivo completado: ${result.success} exitosos, ${result.failed} fallidos`);
+          return result;
+        } catch (error: unknown) {
+          const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+          set({
+            error: errorMessage || 'Error al resetear disponibilidad anual masiva',
+            isRenewing: false,
+          });
+          console.error('❌ Error en resetAllAnnualAvailability:', error);
+          throw error;
+        }
+      },
+
+      resetAllMonthlyAvailability: async () => {
+        try {
+          set({ isRenewing: true, error: null });
+          console.log('🔄 Reseteando disponibilidad mensual para todos los empleados...');
+
+          const result = await LicenseService.resetAllMonthlyAvailability();
+
+          set({ isRenewing: false });
+          console.log(`✅ Reset mensual masivo completado: ${result.success} exitosos, ${result.failed} fallidos`);
+          return result;
+        } catch (error: unknown) {
+          const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+          set({
+            error: errorMessage || 'Error al resetear disponibilidad mensual masiva',
+            isRenewing: false,
+          });
+          console.error('❌ Error en resetAllMonthlyAvailability:', error);
+          throw error;
         }
       },
 

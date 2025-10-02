@@ -5,11 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Badge } from '../components/ui/badge';
 import { ImportEmployeesModal } from '../components/employees/ImportEmployeesModal';
 import { ExportEmployeesModal } from '../components/employees/ExportEmployeesModal';
-import { 
-  ArrowLeft, 
-  Edit, 
-  Trash2, 
-  Eye, 
+import {
+  ArrowLeft,
+  Edit,
+  Trash2,
+  Eye,
   Users,
   Building,
   Calendar,
@@ -26,9 +26,12 @@ import {
   Upload,
   Download,
   Plus,
-  BarChart3
+  BarChart3,
+  RotateCcw,
+  RefreshCw
 } from 'lucide-react';
 import { useEmployeeStore } from '../stores/employeeStore';
+import { useLicenseStore } from '../stores/licenseStore';
 
 
 
@@ -63,8 +66,13 @@ export const EmployeesPage: React.FC = () => {
   const [showImportModal, setShowImportModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
 
+  // Estados para operaciones de reset
+  const [resettingMonthly, setResettingMonthly] = useState(false);
+  const [resettingAnnual, setResettingAnnual] = useState(false);
+
   // Obtener datos del store de Firebase
   const { employees, loading, loadEmployees, deleteEmployee, importEmployees } = useEmployeeStore();
+  const { resetAllAnnualAvailability, resetAllMonthlyAvailability } = useLicenseStore();
 
 
   // Cargar datos reales de Firebase
@@ -184,6 +192,72 @@ export const EmployeesPage: React.FC = () => {
 
   const handleViewAvailability = (employeeId: string) => {
     navigate(`/employees/${employeeId}/availability`);
+  };
+
+  // Funciones de reset de disponibilidad
+  const handleResetMonthlyAvailability = async () => {
+    const confirmed = confirm(
+      `¿Estás seguro de que quieres resetear la disponibilidad MENSUAL de TODOS los empleados?\n\n` +
+      `Esta acción:\n` +
+      `• Reseteará los permisos mensuales (OM14, CT15) para todos los empleados\n` +
+      `• Restaurará los contadores mensuales a sus valores iniciales\n` +
+      `• Es irreversible\n\n` +
+      `¿Continuar?`
+    );
+
+    if (!confirmed) return;
+
+    setResettingMonthly(true);
+
+    try {
+      console.log('🔄 Iniciando reset mensual masivo de disponibilidad...');
+
+      const result = await resetAllMonthlyAvailability();
+
+      // Recargar empleados para mostrar cambios
+      await loadEmployees();
+
+      alert(`Reset mensual completado:\n✅ ${result.success} empleados actualizados\n❌ ${result.failed} errores`);
+
+    } catch (error) {
+      console.error('Error general en reset mensual:', error);
+      alert('Error durante el reset mensual. Revisa la consola para más detalles.');
+    } finally {
+      setResettingMonthly(false);
+    }
+  };
+
+  const handleResetAnnualAvailability = async () => {
+    const confirmed = confirm(
+      `¿Estás seguro de que quieres resetear la disponibilidad ANUAL de TODOS los empleados?\n\n` +
+      `Esta acción:\n` +
+      `• Reseteará los permisos anuales (PG01, PS02, GG05, VG11, VGA12) para todos los empleados\n` +
+      `• Restaurará los contadores anuales a sus valores iniciales\n` +
+      `• Para VGA12: acumulará días restantes hasta el límite de 90\n` +
+      `• Es irreversible\n\n` +
+      `¿Continuar?`
+    );
+
+    if (!confirmed) return;
+
+    setResettingAnnual(true);
+
+    try {
+      console.log('🔄 Iniciando reset anual masivo de disponibilidad...');
+
+      const result = await resetAllAnnualAvailability();
+
+      // Recargar empleados para mostrar cambios
+      await loadEmployees();
+
+      alert(`Reset anual completado:\n✅ ${result.success} empleados actualizados\n❌ ${result.failed} errores`);
+
+    } catch (error) {
+      console.error('Error general en reset anual:', error);
+      alert('Error durante el reset anual. Revisa la consola para más detalles.');
+    } finally {
+      setResettingAnnual(false);
+    }
   };
 
   const handleImportEmployees = async (importedEmployees: any[]) => {
@@ -379,6 +453,34 @@ export const EmployeesPage: React.FC = () => {
                 <UserPlus className="h-4 w-4 mr-2" />
                 Nuevo Empleado
               </Button>
+              <Button
+                variant="outline"
+                onClick={handleResetMonthlyAvailability}
+                disabled={resettingMonthly || resettingAnnual}
+                className="flex items-center space-x-2 border-orange-300 text-orange-700 hover:bg-orange-50"
+                title="Resetear disponibilidad mensual para todos los empleados"
+              >
+                {resettingMonthly ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <RotateCcw className="w-4 h-4" />
+                )}
+                <span>Reset Mensual</span>
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleResetAnnualAvailability}
+                disabled={resettingMonthly || resettingAnnual}
+                className="flex items-center space-x-2 border-red-300 text-red-700 hover:bg-red-50"
+                title="Resetear disponibilidad anual para todos los empleados"
+              >
+                {resettingAnnual ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <RotateCcw className="w-4 h-4" />
+                )}
+                <span>Reset Anual</span>
+              </Button>
             </div>
           </div>
         </div>
@@ -555,6 +657,11 @@ export const EmployeesPage: React.FC = () => {
                         <Badge variant={getStatusBadgeVariant(employee.isActive ? 'active' : 'inactive')}>
                           {getStatusLabel(employee.isActive ? 'active' : 'inactive')}
                         </Badge>
+                        {employee.isProfessionalService && (
+                          <Badge className="bg-indigo-100 text-indigo-800 border-indigo-200" title="Servicio profesional">
+                            SP
+                          </Badge>
+                        )}
                       </div>
                       <CardTitle className="text-lg">
                         {employee.firstName} {employee.lastName}

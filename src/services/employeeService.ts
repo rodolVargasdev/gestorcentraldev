@@ -305,6 +305,7 @@ export class EmployeeService {
     return {
       id: doc.id,
       employeeId: data.employeeId,
+      userId: data.userId,
       firstName: data.firstName,
       lastName: data.lastName,
       email: data.email,
@@ -319,6 +320,7 @@ export class EmployeeService {
       personalType: data.personalType || 'full-time',
       address: data.address,
       emergencyContact: data.emergencyContact,
+      isProfessionalService: data.isProfessionalService || false, // Por defecto false
       isActive: data.isActive,
       createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
       updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : new Date(),

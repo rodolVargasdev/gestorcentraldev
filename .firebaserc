@@ -1,8 +1,5 @@
 {
   "projects": {
-    "default": "final-test-dev",
-    "dev": "tu-proyecto-dev-id"
-  },
-  "targets": {},
-  "etags": {}
+    "default": "licencias-gestor"
+  }
 }

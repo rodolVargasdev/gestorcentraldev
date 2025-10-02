@@ -289,6 +289,23 @@ export const ViewEmployeePage: React.FC = () => {
                     </span>
                   </div>
                 </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500 mb-1">Servicio Profesional</h3>
+                  <div className="flex items-center space-x-2">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      employee.isProfessionalService
+                        ? 'bg-blue-100 text-blue-800'
+                        : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {employee.isProfessionalService ? 'Sí' : 'No'}
+                    </span>
+                    {employee.isProfessionalService && (
+                      <span className="text-xs text-gray-500">
+                        Solo OM14 y CT15
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>

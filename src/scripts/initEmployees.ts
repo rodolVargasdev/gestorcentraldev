@@ -61,6 +61,7 @@ const sampleEmployees = [
       country: 'El Salvador',
     },
     notes: 'Empleada destacada con excelente gestión de personal',
+    isProfessionalService: false, // No es de servicio profesional
   },
   {
     employeeId: 'EMP002',
@@ -88,6 +89,7 @@ const sampleEmployees = [
       country: 'El Salvador',
     },
     notes: 'Desarrollador experto en React y Node.js',
+    isProfessionalService: true, // Es de servicio profesional
   },
   {
     employeeId: 'EMP003',
@@ -115,6 +117,7 @@ const sampleEmployees = [
       country: 'El Salvador',
     },
     notes: 'Especialista en marketing digital',
+    isProfessionalService: false, // No es de servicio profesional
   },
   {
     employeeId: 'EMP004',
@@ -142,6 +145,7 @@ const sampleEmployees = [
       country: 'El Salvador',
     },
     notes: 'Contador certificado con 8 años de experiencia',
+    isProfessionalService: true, // Es de servicio profesional
   },
   {
     employeeId: 'EMP005',
@@ -169,6 +173,7 @@ const sampleEmployees = [
       country: 'El Salvador',
     },
     notes: 'Coordinadora eficiente con excelente gestión de procesos',
+    isProfessionalService: false, // No es de servicio profesional
   },
   {
     employeeId: 'EMP006',
@@ -196,6 +201,7 @@ const sampleEmployees = [
       country: 'El Salvador',
     },
     notes: 'Vendedor destacado con metas superadas',
+    isProfessionalService: false, // No es de servicio profesional
   },
   {
     employeeId: 'EMP007',
@@ -223,6 +229,7 @@ const sampleEmployees = [
       country: 'El Salvador',
     },
     notes: 'Desarrolladora especializada en React y TypeScript',
+    isProfessionalService: true, // Es de servicio profesional
   },
   {
     employeeId: 'EMP008',
@@ -250,6 +257,7 @@ const sampleEmployees = [
       country: 'El Salvador',
     },
     notes: 'Analista con experiencia en finanzas corporativas',
+    isProfessionalService: true, // Es de servicio profesional
   },
   {
     employeeId: 'EMP009',
@@ -277,6 +285,7 @@ const sampleEmployees = [
       country: 'El Salvador',
     },
     notes: 'Asistente eficiente y organizada',
+    isProfessionalService: false, // No es de servicio profesional
   },
   {
     employeeId: 'EMP010',
@@ -304,6 +313,7 @@ const sampleEmployees = [
       country: 'El Salvador',
     },
     notes: 'Técnico especializado en hardware y software',
+    isProfessionalService: true, // Es de servicio profesional
   },
 ];
 
