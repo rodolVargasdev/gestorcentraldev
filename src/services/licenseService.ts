@@ -1321,16 +1321,17 @@ export class LicenseService {
                   const vga12 = disponibilidad.licencias_dias[licenseType.codigo];
 
                   // Calcular días no utilizados del año anterior
-                  const diasNoUtilizados = vga12.disponible_anual;
+                  const diasNoUtilizados = vga12.disponible_anual ?? 0;
                   const maxAcumulacion = licenseType.max_acumulacion || 90;
 
                   // Acumular días no utilizados (respetando el máximo)
-                  const nuevoAcumulado = Math.min(vga12.acumulado_total + diasNoUtilizados, maxAcumulacion);
+                  const prevAcumulado = vga12.acumulado_total ?? 0;
+                  const nuevoAcumulado = Math.min(prevAcumulado + diasNoUtilizados, maxAcumulacion);
 
                   // Reiniciar el año actual
                   vga12.asignada_anual = licenseType.cantidad_maxima; // 15 días nuevos
                   vga12.utilizada_anual = 0;
-                  vga12.disponible_anual = licenseType.cantidad_maxima + (nuevoAcumulado - vga12.acumulado_total); // 15 + acumulado
+                  vga12.disponible_anual = licenseType.cantidad_maxima + (nuevoAcumulado - prevAcumulado); // 15 + acumulado
                   vga12.acumulado_total = nuevoAcumulado; // Actualizar total acumulado
                   vga12.ultima_actualizacion = new Date();
 
@@ -1596,12 +1597,12 @@ export class LicenseService {
       }
 
       return requests;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('❌ Error getting employee license requests:', error);
       console.error('❌ Detalles del error:', {
-        message: error.message,
-        code: error.code,
-        name: error.name
+        message: (error as Error & { code?: string }).message,
+        code: (error as { code?: string }).code,
+        name: (error as Error).name
       });
 
       // Intentar consulta simple como respaldo si la consulta con orderBy falla
