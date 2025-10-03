@@ -127,26 +127,7 @@ export const ReportsPage: React.FC = () => {
     try {
       const { employee, licenseRequests, totalDays, totalHours } = reportData;
 
-      // Crear hoja de resumen
-      const summaryData = [
-        ['REPORTE DE PERMISOS - RESUMEN'],
-        [''],
-        ['Empleado:', `${employee.firstName} ${employee.lastName}`],
-        ['ID Empleado:', employee.employeeId],
-        ['Departamento:', employee.department],
-        ['Cargo:', employee.position],
-        ['Período:', `${format(new Date(dateRange.startDate), 'dd/MM/yyyy', { locale: es })} - ${format(new Date(dateRange.endDate), 'dd/MM/yyyy', { locale: es })}`],
-        ['Fecha de generación:', format(new Date(), 'dd/MM/yyyy HH:mm', { locale: es })],
-        [''],
-        ['TOTALES'],
-        ['Total de solicitudes:', licenseRequests.length],
-        ['Total de días:', totalDays],
-        ['Total de horas:', totalHours],
-        [''],
-        ['DETALLE DE SOLICITUDES']
-      ];
-
-      // Crear datos detallados
+      // Crear datos detallados (sin títulos para facilitar filtros)
       const detailData = [
         ['Código', 'Tipo de Licencia', 'Fecha Inicio', 'Fecha Fin', 'Cantidad', 'Motivo', 'Estado', 'Fecha Solicitud']
       ];
@@ -167,13 +148,9 @@ export const ReportsPage: React.FC = () => {
       // Crear libro de Excel
       const workbook = XLSX.utils.book_new();
       
-      // Hoja de resumen
-      const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
-      XLSX.utils.book_append_sheet(workbook, summarySheet, 'Resumen');
-
-      // Hoja de detalle
+      // Hoja de detalle (sin títulos para facilitar filtros)
       const detailSheet = XLSX.utils.aoa_to_sheet(detailData);
-      XLSX.utils.book_append_sheet(workbook, detailSheet, 'Detalle');
+      XLSX.utils.book_append_sheet(workbook, detailSheet, 'Detalle de Permisos');
 
       // Ajustar ancho de columnas
       const colWidths = [
@@ -245,24 +222,13 @@ export const ReportsPage: React.FC = () => {
         }
       }
 
-      // Crear datos del reporte general
+      // Crear datos del reporte general (sin títulos para facilitar filtros)
       const generalData = [
-        ['REPORTE GENERAL DE PERMISOS'],
-        [''],
-        ['Período:', `${format(new Date(dateRange.startDate), 'dd/MM/yyyy', { locale: es })} - ${format(new Date(dateRange.endDate), 'dd/MM/yyyy', { locale: es })}`],
-        ['Fecha de generación:', format(new Date(), 'dd/MM/yyyy HH:mm', { locale: es })],
-        ['Total de empleados con permisos:', employeeReports.size],
-        ['Total de solicitudes:', activeRequests.length],
-        [''],
-        ['DETALLE POR EMPLEADO']
-      ];
-
-      const detailData = [
         ['Empleado', 'ID', 'Departamento', 'Cargo', 'Solicitudes', 'Total Días', 'Total Horas']
       ];
 
       for (const [, report] of employeeReports) {
-        detailData.push([
+        generalData.push([
           `${report.employee.firstName} ${report.employee.lastName}`,
           report.employee.employeeId,
           report.employee.department,
@@ -273,10 +239,8 @@ export const ReportsPage: React.FC = () => {
         ]);
       }
 
-      // Crear hoja de detalle completo de permisos
+      // Crear hoja de detalle completo de permisos (sin títulos para facilitar filtros)
       const detailedPermissionsData = [
-        ['DETALLE COMPLETO DE PERMISOS'],
-        [''],
         ['Empleado', 'ID Empleado', 'Departamento', 'Código Permiso', 'Tipo de Permiso', 'Fecha Inicio', 'Fecha Fin', 'Cantidad', 'Motivo', 'Estado', 'Fecha Solicitud']
       ];
 
@@ -323,8 +287,6 @@ export const ReportsPage: React.FC = () => {
       }
 
       const licenseTypeData = [
-        ['RESUMEN POR TIPO DE PERMISO'],
-        [''],
         ['Tipo de Permiso', 'Cantidad de Solicitudes', 'Total Días', 'Total Horas']
       ];
 
@@ -340,24 +302,20 @@ export const ReportsPage: React.FC = () => {
       // Crear libro de Excel
       const workbook = XLSX.utils.book_new();
       
-      // Hoja de resumen general
+      // Hoja de resumen por empleado (sin títulos para facilitar filtros)
       const summarySheet = XLSX.utils.aoa_to_sheet(generalData);
-      XLSX.utils.book_append_sheet(workbook, summarySheet, 'Resumen General');
+      XLSX.utils.book_append_sheet(workbook, summarySheet, 'Resumen por Empleado');
 
-      // Hoja de detalle por empleado
-      const detailSheet = XLSX.utils.aoa_to_sheet(detailData);
-      XLSX.utils.book_append_sheet(workbook, detailSheet, 'Detalle por Empleado');
-
-      // Hoja de detalle completo de permisos
+      // Hoja de detalle completo de permisos (sin títulos para facilitar filtros)
       const detailedSheet = XLSX.utils.aoa_to_sheet(detailedPermissionsData);
       XLSX.utils.book_append_sheet(workbook, detailedSheet, 'Detalle Completo');
 
-      // Hoja de resumen por tipo de permiso
+      // Hoja de resumen por tipo de permiso (sin títulos para facilitar filtros)
       const licenseTypeSheet = XLSX.utils.aoa_to_sheet(licenseTypeData);
       XLSX.utils.book_append_sheet(workbook, licenseTypeSheet, 'Resumen por Tipo');
 
       // Ajustar ancho de columnas para cada hoja
-      const detailColWidths = [
+      const summaryColWidths = [
         { wch: 25 }, // Empleado
         { wch: 15 }, // ID
         { wch: 20 }, // Departamento
@@ -366,7 +324,7 @@ export const ReportsPage: React.FC = () => {
         { wch: 12 }, // Total Días
         { wch: 12 }  // Total Horas
       ];
-      detailSheet['!cols'] = detailColWidths;
+      summarySheet['!cols'] = summaryColWidths;
 
       const detailedColWidths = [
         { wch: 25 }, // Empleado

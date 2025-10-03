@@ -7,11 +7,10 @@ Mejorar los reportes generales para incluir información detallada de los permis
 
 ### **1. REPORTE GENERAL DETALLADO**
 
-#### **A. Múltiples Hojas de Excel:**
-- ✅ **Resumen General**: Estadísticas generales del período
-- ✅ **Detalle por Empleado**: Resumen por cada empleado
-- ✅ **Detalle Completo**: Información detallada de cada permiso
-- ✅ **Resumen por Tipo**: Análisis estadístico por tipo de permiso
+#### **A. Múltiples Hojas de Excel (Sin Títulos para Facilitar Filtros):**
+- ✅ **Resumen por Empleado**: Resumen por cada empleado (sin títulos)
+- ✅ **Detalle Completo**: Información detallada de cada permiso (sin títulos)
+- ✅ **Resumen por Tipo**: Análisis estadístico por tipo de permiso (sin títulos)
 
 #### **B. Información Detallada Incluida:**
 
@@ -86,34 +85,27 @@ Mejorar los reportes generales para incluir información detallada de los permis
 - ✅ **Eficiencia**: Análisis de productividad
 - ✅ **Planificación**: Datos para futuras decisiones
 
+### **4. Facilidad de Filtros:**
+- ✅ **Sin Títulos**: Los datos empiezan desde la primera fila
+- ✅ **Filtros Automáticos**: Excel puede aplicar filtros automáticamente
+- ✅ **Análisis Rápido**: Fácil filtrado por cualquier columna
+- ✅ **Exportación**: Datos listos para análisis en otras herramientas
+
 ## 📁 **ESTRUCTURA DEL ARCHIVO EXCEL**
 
-### **Hoja 1: "Resumen General"**
-```
-REPORTE GENERAL DE PERMISOS
-
-Período: 01/01/2024 - 31/12/2024
-Fecha de generación: 15/12/2024 14:30
-Total de empleados con permisos: 25
-Total de solicitudes: 150
-
-DETALLE POR EMPLEADO
-[Tabla con resumen por empleado]
-```
-
-### **Hoja 2: "Detalle por Empleado"**
+### **Hoja 1: "Resumen por Empleado"**
 ```
 Empleado | ID | Departamento | Cargo | Solicitudes | Total Días | Total Horas
 Juan Pérez | EMP001 | IT | Desarrollador | 5 | 15 | 40
 ```
 
-### **Hoja 3: "Detalle Completo"**
+### **Hoja 2: "Detalle Completo"**
 ```
 Empleado | ID Empleado | Departamento | Código Permiso | Tipo de Permiso | Fecha Inicio | Fecha Fin | Cantidad | Motivo | Estado | Fecha Solicitud
 Juan Pérez | EMP001 | IT | PG01 | Permiso Personal con Goce | 15/12/2024 | 15/12/2024 | 1 | Cita médica | Activa | 14/12/2024 09:30
 ```
 
-### **Hoja 4: "Resumen por Tipo"**
+### **Hoja 3: "Resumen por Tipo"**
 ```
 Tipo de Permiso | Cantidad de Solicitudes | Total Días | Total Horas
 PG01 - Permiso Personal con Goce | 45 | 45 | 0
