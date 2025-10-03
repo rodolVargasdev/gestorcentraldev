@@ -162,7 +162,8 @@ export const ImportEmployeesModal: React.FC<ImportEmployeesModalProps> = ({
          department: String(row.department || row['Departamento'] || row['Department'] || '').trim(),
          position: String(row.position || row['Puesto'] || row['Position'] || '').trim(),
          employeeType: String(row.employeeType || row['Tipo Empleado'] || row['Employee Type'] || '').trim().toLowerCase() as 'operativo' | 'administrativo',
-         hireDate: String(row.hireDate || row['Fecha Contratación'] || row['Hire Date'] || '').trim()
+         hireDate: String(row.hireDate || row['Fecha Contratación'] || row['Hire Date'] || '').trim(),
+         isProfessionalService: Boolean(row.isProfessionalService || row['Servicio Profesional'] || row['Professional Service'] || false)
        }));
 
        validateData(mappedData);

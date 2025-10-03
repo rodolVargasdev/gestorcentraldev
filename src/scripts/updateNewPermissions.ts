@@ -58,7 +58,7 @@ export async function updateNewPermissions() {
         requiresJustification: true,
         unitControl: 'uses',
         periodControl: 'monthly',
-        totalAvailable: 2, // 2 olvidos mensuales
+        totalAvailable: 3, // 3 olvidos mensuales
         maxDaysPerRequest: 1,
         category: 'Administrativa',
         hasSalary: true,

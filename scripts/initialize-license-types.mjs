@@ -66,13 +66,13 @@ const LICENSE_TYPES = [
   },
   {
     codigo: 'VGA12',
-    nombre: 'Permiso de Vacación Acumulativo',
+    nombre: 'Permiso Personal Acumulativo',
     categoria: 'DIAS',
     periodo_control: 'anual',
     cantidad_maxima: 15,
     unidad_control: 'dias',
     max_por_solicitud: 15,
-    descripcion: 'Vacaciones acumulativas - 15 días/año, máximo acumulación 90 días',
+    descripcion: 'Permisos personales acumulativos - 15 días/año, máximo acumulación 90 días',
     activo: true,
     max_acumulacion: 90
   },
@@ -109,10 +109,10 @@ const LICENSE_TYPES = [
     nombre: 'Licencia por Olvido de Marcación',
     categoria: 'OCASION',
     periodo_control: 'mensual',
-    cantidad_maxima: 2,
+    cantidad_maxima: 3,
     unidad_control: 'olvidos',
     max_por_solicitud: 1,
-    descripcion: '2 olvidos de marcación por mes - con historial anual',
+    descripcion: '3 olvidos de marcación por mes - con historial anual',
     activo: true,
     requiere_historial_anual: true
   },

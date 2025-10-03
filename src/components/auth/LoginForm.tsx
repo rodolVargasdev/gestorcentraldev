@@ -94,7 +94,7 @@ export function LoginForm() {
 
       <div className="text-center">
         <p className="text-xs text-muted-foreground">
-          Usuario de prueba: prueba@test.test / contraseña: 123456
+          Accede con tu cuenta de Firebase Authentication
         </p>
       </div>
     </div>

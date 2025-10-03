@@ -46,13 +46,13 @@ async function addVGA12() {
 
     const vga12Data = {
       codigo: 'VGA12',
-      nombre: 'Permiso de Vacación Acumulativo',
+      nombre: 'Permiso Personal Acumulativo',
       categoria: 'DIAS',
       periodo_control: 'anual',
       cantidad_maxima: 15,
       unidad_control: 'dias',
       max_por_solicitud: 15,
-      descripcion: 'Vacaciones acumulativas - 15 días/año, máximo acumulación 90 días',
+      descripcion: 'Permisos personales acumulativos - 15 días/año, máximo acumulación 90 días',
       activo: true,
       max_acumulacion: 90,
       createdAt: serverTimestamp(),

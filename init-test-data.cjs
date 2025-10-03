@@ -167,7 +167,7 @@ async function initializeTestData() {
       { code: 'VG11', name: 'Vacaciones Anuales', max: 15 },
       { code: 'JRV12', name: 'Licencia por Cargo en Junta Receptora de Votos', max: 1 },
       { code: 'JU13', name: 'Licencia por Ser Llamado a Conformar Jurado', max: 1 },
-      { code: 'OM14', name: 'Licencia por Olvido de Marcación', max: 2 },
+      { code: 'OM14', name: 'Licencia por Olvido de Marcación', max: 3 },
       { code: 'CT15', name: 'Licencia por Cambio de Turno', max: 3 },
       { code: 'RH16', name: 'Licencia por Movimiento de Recurso Humano', max: 1 },
     ];

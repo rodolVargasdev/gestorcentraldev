@@ -58,7 +58,7 @@ async function fixOM14Config() {
       category: 'DIAS',
       unitControl: 'uses',
       periodControl: 'monthly',
-      totalAvailable: 2, // 2 olvidos mensuales
+      totalAvailable: 3, // 3 olvidos mensuales
       maxDaysPerRequest: 1,
       requiresJustification: true,
       hasSalary: true,
@@ -200,7 +200,7 @@ async function fixOM14Config() {
     console.log('El tipo de licencia OM14 ahora está configurado correctamente para:');
     console.log('   - Manejar olvidos de marcación de entrada y salida');
     console.log('   - Requerir fecha del olvido, tipo y justificación');
-    console.log('   - Controlar 2 olvidos mensuales por empleado');
+    console.log('   - Controlar 3 olvidos mensuales por empleado');
     console.log('   - Integrarse correctamente con el formulario actualizado');
 
   } catch (error) {

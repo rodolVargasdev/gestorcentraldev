@@ -23,7 +23,7 @@ export class AuthService {
           email: firebaseUser.email || '',
           displayName: firebaseUser.displayName || undefined,
           photoURL: firebaseUser.photoURL || undefined,
-          role: 'viewer', // Rol por defecto
+          role: 'super-admin', // Cambiado a super-admin por defecto
           createdAt: new Date(),
           lastLogin: new Date()
         });
@@ -49,7 +49,7 @@ export class AuthService {
         email: firebaseUser.email || '',
         displayName: firebaseUser.displayName || undefined,
         photoURL: firebaseUser.photoURL || undefined,
-        role: 'viewer',
+        role: 'super-admin', // Cambiado a super-admin por defecto
         createdAt: new Date(),
         lastLogin: new Date()
       };
@@ -85,7 +85,7 @@ export class AuthService {
               email: firebaseUser.email || '',
               displayName: firebaseUser.displayName || undefined,
               photoURL: firebaseUser.photoURL || undefined,
-              role: 'viewer',
+              role: 'super-admin', // Cambiado a super-admin por defecto
               createdAt: new Date(),
               lastLogin: new Date()
             });
@@ -101,7 +101,7 @@ export class AuthService {
             email: firebaseUser.email || '',
             displayName: firebaseUser.displayName || undefined,
             photoURL: firebaseUser.photoURL || undefined,
-            role: 'viewer',
+            role: 'super-admin', // Cambiado a super-admin por defecto
             createdAt: new Date(),
             lastLogin: new Date()
           };

@@ -23,12 +23,12 @@ export class UserService {
       const userDoc = {
         uid,
         email: userData.email || '',
-        firstName: userData.firstName,
-        lastName: userData.lastName,
-        displayName: userData.displayName,
-        photoURL: userData.photoURL,
-        role: userData.role || 'viewer',
-        department: userData.department,
+        firstName: userData.firstName || 'Usuario',
+        lastName: userData.lastName || 'Sistema',
+        displayName: userData.displayName || `${userData.firstName || 'Usuario'} ${userData.lastName || 'Sistema'}`,
+        photoURL: userData.photoURL || null,
+        role: userData.role || 'super-admin', // Cambiado de 'viewer' a 'super-admin'
+        department: userData.department || 'General',
         createdAt: serverTimestamp(),
         lastLogin: serverTimestamp(),
       };

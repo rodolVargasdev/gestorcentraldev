@@ -1,4 +1,4 @@
-Código Empleado*,Nombre Completo*,Email*,Puesto*,Área/Departamento*,Fecha Contratación* (YYYY-MM-DD)
-EMP001,Ana García,ana.garcia@test.com,Desarrollador,Tecnología,2023-01-15
-EMP002,Carlos López,carlos.lopez@test.com,Analista,Finanzas,2023-02-20
-EMP003,María Rodríguez,maria.rodriguez@test.com,Manager,RRHH,2023-03-10
+Código Empleado*,Nombre Completo*,Email*,Puesto*,Área/Departamento*,Fecha Contratación* (YYYY-MM-DD),Servicio Profesional (opcional)
+EMP001,Ana García,ana.garcia@test.com,Desarrollador,Tecnología,2023-01-15,false
+EMP002,Carlos López,carlos.lopez@test.com,Analista,Finanzas,2023-02-20,true
+EMP003,María Rodríguez,maria.rodriguez@test.com,Manager,RRHH,2023-03-10,false

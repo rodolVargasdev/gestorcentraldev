@@ -471,7 +471,7 @@ export const EditEmployeePage: React.FC = () => {
                       className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                     />
                     <span className="text-sm font-medium text-gray-700">
-                      Es de servicio profesional
+                      Es de servicio profesional (opcional)
                     </span>
                   </label>
                   <p className="text-xs text-gray-500 mt-1">

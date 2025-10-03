@@ -38,9 +38,15 @@ service cloud.firestore {
       // Solo el usuario puede leer su propio perfil
       allow read: if isAuthenticated() && request.auth.uid == userId;
 
-      // Solo administradores pueden crear/editar usuarios
-      allow create: if isAdmin();
-      allow update: if isAdmin() || (isAuthenticated() && request.auth.uid == userId);
+      // Usuarios autenticados pueden crear su propio perfil
+      // Administradores pueden crear cualquier usuario
+      allow create: if isAuthenticated() && 
+                     (request.auth.uid == userId || isAdmin());
+      
+      // Usuarios pueden actualizar su propio perfil
+      // Administradores pueden actualizar cualquier usuario
+      allow update: if isAuthenticated() && 
+                     (request.auth.uid == userId || isAdmin());
 
       // Solo administradores pueden eliminar usuarios
       allow delete: if isAdmin();
@@ -54,8 +60,10 @@ service cloud.firestore {
       // Cualquier usuario autenticado puede leer tipos de licencias
       allow read: if isAuthenticated();
 
-      // Solo administradores pueden crear/editar/eliminar tipos de licencias
-      allow write: if isAdmin();
+      // Usuarios autenticados pueden crear tipos de licencias (para inicialización)
+      // Solo administradores pueden editar/eliminar tipos de licencias
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
     }
 
     // ========================================

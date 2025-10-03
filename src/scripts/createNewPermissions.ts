@@ -29,7 +29,7 @@ export async function createNewPermissions() {
         category: 'Administrativa',
         unitControl: 'uses',
         periodControl: 'monthly',
-        totalAvailable: 2, // 2 olvidos mensuales
+        totalAvailable: 3, // 3 olvidos mensuales
         maxDaysPerRequest: 1,
         requiresJustification: true,
         hasSalary: true,

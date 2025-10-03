@@ -115,6 +115,10 @@ export class LicenseService {
       
       await batch.commit();
       console.log('🎉 Tipos de licencias inicializados/actualizados correctamente');
+      
+      // ✅ ACTUALIZACIÓN AUTOMÁTICA: Verificar si OM14 cambió de 2 a 3
+      await this.updateEmployeeAvailabilityForOM14Change();
+      
     } catch (error) {
       console.error('❌ Error inicializando tipos de licencias:', error);
       throw new Error('Error al inicializar tipos de licencias');
@@ -534,7 +538,7 @@ export class LicenseService {
               } else {
                 // Si es del mes actual, restaurar disponibilidad actual
                 ocasionLicencia.utilizada_mes_actual = (ocasionLicencia.utilizada_mes_actual || 0) - quantity;
-                ocasionLicencia.disponible_mes_actual = (ocasionLicencia.disponible_mes_actual || (licenseTypeCode === 'OM14' ? 2 : 3)) + quantity;
+                ocasionLicencia.disponible_mes_actual = (ocasionLicencia.disponible_mes_actual || (licenseTypeCode === 'OM14' ? 3 : 3)) + quantity;
               }
             } else {
               // Para otros tipos de OCASIÓN, restaurar contadores anuales y historial
@@ -834,7 +838,7 @@ export class LicenseService {
                 }
                 
                 // Actualizar el mes del cambio
-                const maxDisponible = licenseTypeCode === 'OM14' ? 2 : 3;
+                const maxDisponible = licenseTypeCode === 'OM14' ? 3 : 3;
                 if (!ocasionLicencia.uso_mensual[monthKey]) {
                   ocasionLicencia.uso_mensual[monthKey] = { utilizada: 0, disponible: maxDisponible };
                 }
@@ -846,7 +850,7 @@ export class LicenseService {
               } else {
                 // Si es del mes actual, afectar disponibilidad actual
                 ocasionLicencia.utilizada_mes_actual = (ocasionLicencia.utilizada_mes_actual || 0) + quantity;
-                ocasionLicencia.disponible_mes_actual = (ocasionLicencia.disponible_mes_actual || (licenseTypeCode === 'OM14' ? 2 : 3)) - quantity;
+                ocasionLicencia.disponible_mes_actual = (ocasionLicencia.disponible_mes_actual || (licenseTypeCode === 'OM14' ? 3 : 3)) - quantity;
               }
             } else {
               // Para otros tipos de OCASIÓN, actualizar contadores anuales y historial
@@ -1233,9 +1237,9 @@ export class LicenseService {
         
         // Corregir valores de OM14
         disponibilidad.licencias_ocasion.OM14.periodo_control = 'mensual';
-        disponibilidad.licencias_ocasion.OM14.asignada_mensual = 2;
+        disponibilidad.licencias_ocasion.OM14.asignada_mensual = 3;
         disponibilidad.licencias_ocasion.OM14.utilizada_mes_actual = 0;
-        disponibilidad.licencias_ocasion.OM14.disponible_mes_actual = 2;
+        disponibilidad.licencias_ocasion.OM14.disponible_mes_actual = 3;
         disponibilidad.licencias_ocasion.OM14.max_por_solicitud = 1;
         disponibilidad.licencias_ocasion.OM14.unidad = 'olvidos';
         disponibilidad.licencias_ocasion.OM14.ultima_actualizacion = getCurrentDateInElSalvador();
@@ -1297,9 +1301,14 @@ export class LicenseService {
         throw new Error('Empleado o disponibilidad no encontrada');
       }
 
-             const licenseTypes = await this.getActiveLicenseTypes();
-       const currentYear = getCurrentDateInElSalvador().getFullYear();
+      const licenseTypes = await this.getActiveLicenseTypes();
+      const currentYear = getCurrentDateInElSalvador().getFullYear();
+      const currentDate = getCurrentDateInElSalvador();
       const disponibilidad = { ...employee.disponibilidad };
+
+      // ✅ VERIFICAR SI ES 1 DE ENERO PARA ACTIVAR ACUMULACIÓN DE VGA12
+      const isJanuaryFirst = currentDate.getMonth() === 0 && currentDate.getDate() === 1;
+      console.log(`📅 Fecha actual: ${currentDate.toLocaleDateString()}, Es 1 de enero: ${isJanuaryFirst}`);
 
       // Renovar licencias anuales
       for (const licenseType of licenseTypes) {
@@ -1316,26 +1325,37 @@ export class LicenseService {
 
             case 'DIAS':
               if (disponibilidad.licencias_dias[licenseType.codigo]) {
-                // ✅ MANEJO ESPECIAL PARA VGA12 (VACACIONES ACUMULATIVAS)
+                // ✅ MANEJO ESPECIAL PARA VGA12 (PERMISO PERSONAL ACUMULATIVO)
                 if (licenseType.codigo === 'VGA12') {
                   const vga12 = disponibilidad.licencias_dias[licenseType.codigo];
 
-                  // Calcular días no utilizados del año anterior
-                  const diasNoUtilizados = vga12.disponible_anual ?? 0;
-                  const maxAcumulacion = licenseType.max_acumulacion || 90;
+                  // ✅ SOLO ACUMULAR SI ES 1 DE ENERO
+                  if (isJanuaryFirst) {
+                    // Calcular días no utilizados del año anterior
+                    const diasNoUtilizados = vga12.disponible_anual ?? 0;
+                    const maxAcumulacion = licenseType.max_acumulacion || 90;
 
-                  // Acumular días no utilizados (respetando el máximo)
-                  const prevAcumulado = vga12.acumulado_total ?? 0;
-                  const nuevoAcumulado = Math.min(prevAcumulado + diasNoUtilizados, maxAcumulacion);
+                    // Acumular días no utilizados (respetando el máximo)
+                    const prevAcumulado = vga12.acumulado_total ?? 0;
+                    const nuevoAcumulado = Math.min(prevAcumulado + diasNoUtilizados, maxAcumulacion);
 
-                  // Reiniciar el año actual
-                  vga12.asignada_anual = licenseType.cantidad_maxima; // 15 días nuevos
-                  vga12.utilizada_anual = 0;
-                  vga12.disponible_anual = licenseType.cantidad_maxima + (nuevoAcumulado - prevAcumulado); // 15 + acumulado
-                  vga12.acumulado_total = nuevoAcumulado; // Actualizar total acumulado
-                  vga12.ultima_actualizacion = new Date();
+                    // Reiniciar el año actual
+                    vga12.asignada_anual = licenseType.cantidad_maxima; // 15 días nuevos
+                    vga12.utilizada_anual = 0;
+                    vga12.disponible_anual = licenseType.cantidad_maxima + (nuevoAcumulado - prevAcumulado); // 15 + acumulado
+                    vga12.acumulado_total = nuevoAcumulado; // Actualizar total acumulado
+                    vga12.ultima_actualizacion = new Date();
 
-                  console.log(`🔄 VGA12 renovado: +${diasNoUtilizados} días acumulados, total acumulado: ${nuevoAcumulado}/${maxAcumulacion}`);
+                    console.log(`🎯 VGA12 - ACUMULACIÓN ACTIVADA (1 de enero): +${diasNoUtilizados} días acumulados, total acumulado: ${nuevoAcumulado}/${maxAcumulacion}`);
+                  } else {
+                    // ✅ RESET NORMAL SIN ACUMULACIÓN (no es 1 de enero)
+                    vga12.asignada_anual = licenseType.cantidad_maxima;
+                    vga12.utilizada_anual = 0;
+                    vga12.disponible_anual = licenseType.cantidad_maxima;
+                    vga12.ultima_actualizacion = new Date();
+
+                    console.log(`🔄 VGA12 - RESET NORMAL (no es 1 de enero): ${licenseType.cantidad_maxima} días disponibles`);
+                  }
                 } else {
                   // Renovación normal para otros tipos de días
                   disponibilidad.licencias_dias[licenseType.codigo].asignada_anual = licenseType.cantidad_maxima;
@@ -1349,8 +1369,8 @@ export class LicenseService {
         }
       }
 
-             disponibilidad.año_actual = currentYear;
-       disponibilidad.ultima_renovacion_anual = getCurrentDateInElSalvador();
+      disponibilidad.año_actual = currentYear;
+      disponibilidad.ultima_renovacion_anual = getCurrentDateInElSalvador();
 
       // Actualizar empleado
       const employeeRef = doc(db, this.employeesCollection, employeeId);
@@ -1358,6 +1378,9 @@ export class LicenseService {
         disponibilidad,
         updatedAt: serverTimestamp(),
       });
+
+      // ✅ VERIFICAR PROTECCIÓN DE VGA12 DESPUÉS DEL RESET ANUAL
+      await this.verifyVGA12Protection(employeeId);
 
       console.log(`✅ Disponibilidad anual renovada para empleado: ${employeeId}`);
     } catch (error) {
@@ -1378,9 +1401,13 @@ export class LicenseService {
         throw new Error('Empleado o disponibilidad no encontrada');
       }
 
-             const licenseTypes = await this.getActiveLicenseTypes();
-       const currentMonth = getCurrentDateInElSalvador().getMonth() + 1;
+      const licenseTypes = await this.getActiveLicenseTypes();
+      const currentMonth = getCurrentDateInElSalvador().getMonth() + 1;
       const disponibilidad = { ...employee.disponibilidad };
+
+      // ✅ PROTECCIÓN ESPECIAL: VGA12 NO DEBE SER AFECTADO POR RESETES MENSUALES
+      console.log(`🛡️ Verificando protección de VGA12 (Permiso Personal Acumulativo)...`);
+      const vga12Original = disponibilidad.licencias_dias?.VGA12 ? { ...disponibilidad.licencias_dias.VGA12 } : null;
 
       // Renovar licencias mensuales
       for (const licenseType of licenseTypes) {
@@ -1469,8 +1496,28 @@ export class LicenseService {
         }
       }
 
-             disponibilidad.mes_actual = currentMonth;
-       disponibilidad.ultima_renovacion_mensual = getCurrentDateInElSalvador();
+      // ✅ RESTAURAR VGA12 SI FUE AFECTADO POR ERROR
+      if (vga12Original && disponibilidad.licencias_dias?.VGA12) {
+        const vga12Actual = disponibilidad.licencias_dias.VGA12;
+        
+        // Verificar si VGA12 fue modificado incorrectamente (no debería tener control mensual)
+        if (vga12Actual.periodo_control === 'mensual' || vga12Actual.asignada_mensual !== undefined) {
+          console.log(`🛡️ RESTAURANDO VGA12: Detectado cambio incorrecto, restaurando valores originales`);
+          
+          // Restaurar valores originales de VGA12
+          disponibilidad.licencias_dias.VGA12 = {
+            ...vga12Original,
+            ultima_actualizacion: getCurrentDateInElSalvador()
+          };
+          
+          console.log(`✅ VGA12 restaurado correctamente - NO debe tener control mensual`);
+        } else {
+          console.log(`✅ VGA12 protegido correctamente - No fue afectado por reset mensual`);
+        }
+      }
+
+      disponibilidad.mes_actual = currentMonth;
+      disponibilidad.ultima_renovacion_mensual = getCurrentDateInElSalvador();
 
       // Actualizar empleado
       const employeeRef = doc(db, this.employeesCollection, employeeId);
@@ -1478,6 +1525,9 @@ export class LicenseService {
         disponibilidad,
         updatedAt: serverTimestamp(),
       });
+
+      // ✅ VERIFICAR PROTECCIÓN DE VGA12 DESPUÉS DEL RESET
+      await this.verifyVGA12Protection(employeeId);
 
       console.log(`✅ Disponibilidad mensual renovada para empleado: ${employeeId}`);
     } catch (error) {
@@ -1891,6 +1941,227 @@ export class LicenseService {
     } catch (error) {
       console.error('Error getting employee by ID:', error);
       throw new Error('Error al obtener empleado');
+    }
+  }
+
+  // ========================================
+  // VERIFICACIÓN Y PROTECCIÓN DE VGA12
+  // ========================================
+
+  // Verificar estado de VGA12 y proteger contra reseteos incorrectos
+  static async verifyVGA12Protection(employeeId: string): Promise<void> {
+    try {
+      console.log(`🔍 Verificando protección de VGA12 para empleado: ${employeeId}`);
+      
+      const employee = await this.getEmployeeById(employeeId);
+      if (!employee?.disponibilidad?.licencias_dias?.VGA12) {
+        console.log(`ℹ️ VGA12 no encontrado para empleado ${employeeId}`);
+        return;
+      }
+
+      const vga12 = employee.disponibilidad.licencias_dias.VGA12;
+      
+      // Verificar que VGA12 tenga la configuración correcta
+      const issues = [];
+      
+      if (vga12.periodo_control !== 'anual') {
+        issues.push(`❌ Período de control incorrecto: ${vga12.periodo_control} (debe ser 'anual')`);
+      }
+      
+      if (vga12.asignada_mensual !== undefined) {
+        issues.push(`❌ No debe tener asignada_mensual: ${vga12.asignada_mensual}`);
+      }
+      
+      if (vga12.utilizada_mes_actual !== undefined) {
+        issues.push(`❌ No debe tener utilizada_mes_actual: ${vga12.utilizada_mes_actual}`);
+      }
+      
+      if (vga12.disponible_mes_actual !== undefined) {
+        issues.push(`❌ No debe tener disponible_mes_actual: ${vga12.disponible_mes_actual}`);
+      }
+
+      if (issues.length > 0) {
+        console.log(`⚠️ PROBLEMAS DETECTADOS EN VGA12:`, issues);
+        
+        // Corregir VGA12
+        const correctedVGA12 = {
+          ...vga12,
+          periodo_control: 'anual',
+          asignada_mensual: undefined,
+          utilizada_mes_actual: undefined,
+          disponible_mes_actual: undefined,
+          ultima_actualizacion: getCurrentDateInElSalvador()
+        };
+
+        // Actualizar en la base de datos
+        const employeeRef = doc(db, this.employeesCollection, employeeId);
+        await updateDoc(employeeRef, {
+          'disponibilidad.licencias_dias.VGA12': correctedVGA12,
+          updatedAt: serverTimestamp()
+        });
+
+        console.log(`✅ VGA12 corregido para empleado ${employeeId}`);
+      } else {
+        console.log(`✅ VGA12 configurado correctamente para empleado ${employeeId}`);
+      }
+      
+    } catch (error) {
+      console.error('❌ Error verificando protección de VGA12:', error);
+    }
+  }
+
+  // ========================================
+  // FUNCIONES DE REPORTES
+  // ========================================
+
+  // Obtener solicitudes de licencias por empleado y rango de fechas
+  static async getLicenseRequestsByEmployeeAndDateRange(
+    employeeId: string,
+    startDate: Date,
+    endDate: Date
+  ): Promise<LicenseRequest[]> {
+    try {
+      console.log(`🔍 Obteniendo solicitudes para empleado ${employeeId} entre ${startDate.toISOString()} y ${endDate.toISOString()}`);
+      
+      const q = query(
+        collection(db, this.licenseRequestsCollection),
+        where('employeeId', '==', employeeId),
+        where('startDate', '>=', startDate),
+        where('startDate', '<=', endDate),
+        orderBy('startDate', 'desc')
+      );
+      
+      const snapshot = await getDocs(q);
+      const requests = snapshot.docs.map(doc => this.mapDocumentToLicenseRequest(doc));
+      
+      console.log(`✅ Encontradas ${requests.length} solicitudes para empleado ${employeeId}`);
+      return requests;
+      
+    } catch (error) {
+      console.error('❌ Error obteniendo solicitudes por empleado y fecha:', error);
+      throw new Error('Error al obtener solicitudes de licencias');
+    }
+  }
+
+  // Obtener todas las solicitudes de licencias por rango de fechas
+  static async getLicenseRequestsByDateRange(
+    startDate: Date,
+    endDate: Date
+  ): Promise<LicenseRequest[]> {
+    try {
+      console.log(`🔍 Obteniendo todas las solicitudes entre ${startDate.toISOString()} y ${endDate.toISOString()}`);
+      
+      const q = query(
+        collection(db, this.licenseRequestsCollection),
+        where('startDate', '>=', startDate),
+        where('startDate', '<=', endDate),
+        orderBy('startDate', 'desc')
+      );
+      
+      const snapshot = await getDocs(q);
+      const requests = snapshot.docs.map(doc => this.mapDocumentToLicenseRequest(doc));
+      
+      console.log(`✅ Encontradas ${requests.length} solicitudes en el rango de fechas`);
+      return requests;
+      
+    } catch (error) {
+      console.error('❌ Error obteniendo solicitudes por fecha:', error);
+      throw new Error('Error al obtener solicitudes de licencias');
+    }
+  }
+
+  // ========================================
+  // ACTUALIZACIÓN AUTOMÁTICA DE DISPONIBILIDAD
+  // ========================================
+
+  // Actualizar disponibilidad de empleados cuando OM14 cambia de 2 a 3 olvidos
+  static async updateEmployeeAvailabilityForOM14Change(): Promise<void> {
+    try {
+      console.log('🔄 Verificando si OM14 cambió de 2 a 3 olvidos por mes...');
+      
+      // Obtener configuración actual de OM14
+      const om14Query = query(
+        collection(db, this.licenseTypesCollection),
+        where('codigo', '==', 'OM14')
+      );
+      const om14Snapshot = await getDocs(om14Query);
+      
+      if (om14Snapshot.empty) {
+        console.log('ℹ️ OM14 no encontrado, no se requiere actualización');
+        return;
+      }
+      
+      const om14Data = om14Snapshot.docs[0].data();
+      const currentMax = om14Data.cantidad_maxima;
+      
+      console.log(`📊 OM14 configuración actual: ${currentMax} olvidos por mes`);
+      
+      // Si OM14 tiene 3 olvidos, actualizar empleados existentes
+      if (currentMax === 3) {
+        console.log('✅ OM14 configurado con 3 olvidos, actualizando empleados existentes...');
+        await this.updateAllEmployeesOM14Availability();
+      } else {
+        console.log('ℹ️ OM14 no está configurado con 3 olvidos, no se requiere actualización');
+      }
+      
+    } catch (error) {
+      console.error('❌ Error verificando cambios en OM14:', error);
+      // No lanzar error para no interrumpir la inicialización
+    }
+  }
+
+  // Actualizar disponibilidad de OM14 para todos los empleados
+  static async updateAllEmployeesOM14Availability(): Promise<void> {
+    try {
+      console.log('🔄 Actualizando disponibilidad de OM14 para todos los empleados...');
+      
+      // Obtener todos los empleados
+      const employeesSnapshot = await getDocs(collection(db, this.employeesCollection));
+      const batch = writeBatch(db);
+      let updatedCount = 0;
+      
+      for (const employeeDoc of employeesSnapshot.docs) {
+        const employeeData = employeeDoc.data();
+        const employeeId = employeeDoc.id;
+        
+        // Verificar si el empleado tiene disponibilidad
+        if (employeeData.disponibilidad?.licencias_ocasion?.OM14) {
+          const om14Data = employeeData.disponibilidad.licencias_ocasion.OM14;
+          
+          // Solo actualizar si tiene 2 olvidos asignados (configuración antigua)
+          if (om14Data.asignada_mensual === 2) {
+            console.log(`📝 Actualizando empleado ${employeeId}: OM14 de 2 a 3 olvidos`);
+            
+            // Actualizar disponibilidad de OM14
+            const updatedOM14 = {
+              ...om14Data,
+              asignada_mensual: 3,
+              disponible_mes_actual: Math.max(om14Data.disponible_mes_actual || 0, 3 - (om14Data.utilizada_mes_actual || 0)),
+              ultima_actualizacion: getCurrentDateInElSalvador()
+            };
+            
+            // Actualizar en batch
+            const employeeRef = doc(db, this.employeesCollection, employeeId);
+            batch.update(employeeRef, {
+              'disponibilidad.licencias_ocasion.OM14': updatedOM14,
+              updatedAt: serverTimestamp()
+            });
+            
+            updatedCount++;
+          }
+        }
+      }
+      
+      if (updatedCount > 0) {
+        await batch.commit();
+        console.log(`✅ Actualizados ${updatedCount} empleados con nueva disponibilidad de OM14 (3 olvidos)`);
+      } else {
+        console.log('ℹ️ No se encontraron empleados que requieran actualización de OM14');
+      }
+      
+    } catch (error) {
+      console.error('❌ Error actualizando disponibilidad de OM14:', error);
+      throw new Error('Error al actualizar disponibilidad de empleados');
     }
   }
 }

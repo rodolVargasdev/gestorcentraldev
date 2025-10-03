@@ -159,7 +159,7 @@ export function NewLicensePage() {
           let disponible = ocasionLicencia?.disponible_mes_actual;
           if (disponible === undefined || disponible === null) {
             // Usar valor por defecto según el tipo de licencia
-            disponible = selectedLicenseType.codigo === 'OM14' ? 2 : 3;
+            disponible = selectedLicenseType.codigo === 'OM14' ? 3 : 3;
             console.log('⚠️ DEBUG OCASION MENSUAL: Usando valor por defecto', {
               codigo: selectedLicenseType.codigo,
               disponible_por_defecto: disponible

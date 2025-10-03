@@ -90,7 +90,7 @@ async function testOM14Form() {
     console.log('✅ La configuración esperada para OM14 es:');
     console.log('   - Categoría: DIAS');
     console.log('   - Período de control: mensual');
-    console.log('   - Cantidad máxima: 2 olvidos por mes');
+    console.log('   - Cantidad máxima: 3 olvidos por mes');
     console.log('   - Unidad de control: olvidos');
     console.log('   - Máximo por solicitud: 1');
 

@@ -421,10 +421,9 @@ export const NewEmployeePage: React.FC = () => {
                       type="checkbox"
                       {...register('isProfessionalService')}
                       className="rounded border-gray-300 text-green-600 shadow-sm focus:border-green-500 focus:ring-green-500"
-                      required={true}
                     />
                     <span className="text-sm font-medium text-gray-700">
-                      Es de servicio profesional
+                      Es de servicio profesional (opcional)
                     </span>
                   </label>
                   <p className="text-xs text-gray-500 mt-1">

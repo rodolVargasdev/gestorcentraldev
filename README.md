@@ -71,10 +71,10 @@ Este sistema permite gestionar de manera eficiente todos los aspectos relacionad
 | **PS02** | Permiso Personal sin Goce | HORAS | Anual | 480h | Permisos personales no remunerados |
 | **GG05** | Enfermedad Gravísima | DIAS | Anual | 17d | Por enfermedad grave de familiar |
 | **VG11** | Vacaciones Anuales | DIAS | Anual | 15d | Vacaciones ordinarias |
-| **VGA12** | Vacaciones Acumulativas | DIAS | Anual | 15d | Vacaciones con acumulación (máx. 90d) |
+| **VGA12** | Permiso Personal Acumulativo | DIAS | Anual | 15d | Permisos personales con acumulación (máx. 90d) |
 | **LG08** | Lactancia Materna | OCASION | Ninguno | 6m | Licencia por lactancia |
 | **MG07** | Maternidad | OCASION | Ninguno | 112d | Licencia por embarazo |
-| **OM14** | Olvido de Marcación | OCASION | Mensual | 2/mes | Permiso por olvido de marcación |
+| **OM14** | Olvido de Marcación | OCASION | Mensual | 3/mes | Permiso por olvido de marcación |
 | **CT15** | Cambio de Turno | OCASION | Mensual | 3/mes | Permiso por cambio de turno |
 | **EG03** | Enfermedad con Goce | DIAS | Anual | 12d | Enfermedad con remuneración |
 | **ES04** | Enfermedad sin Goce | DIAS | Anual | 30d | Enfermedad sin remuneración |
@@ -470,7 +470,7 @@ gestor-licencias-frontend/
 
 ### Sistema de Servicio Profesional
 Los empleados marcados como "servicio profesional" solo pueden acceder a:
-- **OM14**: Olvido de marcación (máx. 2/mes)
+- **OM14**: Olvido de marcación (máx. 3/mes)
 - **CT15**: Cambio de turno (máx. 3/mes)
 
 ### Permisos Retroactivos
@@ -481,7 +481,7 @@ Los empleados marcados como "servicio profesional" solo pueden acceder a:
 ### Reset de Disponibilidad
 - 🔄 **Reset mensual** al inicio de cada mes
 - 🔄 **Reset anual** al inicio de cada año
-- 🎯 **Acumulación automática** para vacaciones (VGA12)
+- 🎯 **Acumulación automática** para permisos personales (VGA12)
 
 ## 📊 Monitoreo y Analytics
 

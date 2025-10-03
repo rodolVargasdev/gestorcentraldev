@@ -570,5 +570,5 @@ renovarDisponibilidadesMensuales(): Día 1 - resetea mensuales
 
 Maternidad: 112 días que se resetean por embarazo
 Lactancia: Período de 6 meses desde nacimiento
-Olvidos: Solo 2 por mes, historial mensual
+Olvidos: Solo 3 por mes, historial mensual
 Ocasión: Historial completo sin límite fijo

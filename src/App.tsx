@@ -16,6 +16,7 @@ import { NewLicensePage } from './pages/NewLicensePage';
 import { LicenseHistoryPage } from './pages/LicenseHistoryPage';
 import { ViewLicensePage } from './pages/ViewLicensePage';
 import { EditLicensePage } from './pages/EditLicensePage';
+import { ReportsPage } from './pages/ReportsPage';
 
 
 
@@ -128,10 +129,7 @@ function App() {
             path="/reports"
             element={
               <ProtectedRoute>
-                <div className="p-8">
-                  <h1 className="text-2xl font-bold">Reportes</h1>
-                  <p className="text-gray-600">Sistema de reportes y analytics (Fase 5)</p>
-                </div>
+                <ReportsPage />
               </ProtectedRoute>
             }
           />
