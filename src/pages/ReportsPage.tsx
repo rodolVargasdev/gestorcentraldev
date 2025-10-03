@@ -125,7 +125,7 @@ export const ReportsPage: React.FC = () => {
   // Generar archivo Excel
   const generateExcelReport = async (reportData: ReportData) => {
     try {
-      const { employee, licenseRequests, totalDays, totalHours } = reportData;
+      const { employee, licenseRequests } = reportData;
 
       // Crear datos detallados (sin títulos para facilitar filtros)
       const detailData = [
