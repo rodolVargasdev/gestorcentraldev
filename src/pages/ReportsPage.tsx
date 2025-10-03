@@ -273,17 +273,91 @@ export const ReportsPage: React.FC = () => {
         ]);
       }
 
+      // Crear hoja de detalle completo de permisos
+      const detailedPermissionsData = [
+        ['DETALLE COMPLETO DE PERMISOS'],
+        [''],
+        ['Empleado', 'ID Empleado', 'Departamento', 'Código Permiso', 'Tipo de Permiso', 'Fecha Inicio', 'Fecha Fin', 'Cantidad', 'Motivo', 'Estado', 'Fecha Solicitud']
+      ];
+
+      // Ordenar solicitudes por fecha de inicio
+      const sortedRequests = activeRequests.sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
+
+      for (const request of sortedRequests) {
+        const employee = employees.find(emp => emp.id === request.employeeId);
+        if (employee) {
+          detailedPermissionsData.push([
+            `${employee.firstName} ${employee.lastName}`,
+            employee.employeeId,
+            employee.department,
+            request.licenseTypeCode,
+            request.licenseTypeName,
+            format(request.startDate, 'dd/MM/yyyy', { locale: es }),
+            format(request.endDate, 'dd/MM/yyyy', { locale: es }),
+            request.quantity.toString(),
+            request.reason,
+            request.status === 'active' ? 'Activa' : request.status === 'cancelled' ? 'Cancelada' : 'Completada',
+            format(request.createdAt, 'dd/MM/yyyy HH:mm', { locale: es })
+          ]);
+        }
+      }
+
+      // Crear hoja de resumen por tipo de permiso
+      const licenseTypeSummary = new Map<string, { count: number, totalDays: number, totalHours: number }>();
+      
+      for (const request of activeRequests) {
+        const key = `${request.licenseTypeCode} - ${request.licenseTypeName}`;
+        if (!licenseTypeSummary.has(key)) {
+          licenseTypeSummary.set(key, { count: 0, totalDays: 0, totalHours: 0 });
+        }
+        
+        const summary = licenseTypeSummary.get(key)!;
+        summary.count += 1;
+        
+        const days = Math.ceil((request.endDate.getTime() - request.startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        summary.totalDays += days;
+        
+        if (request.licenseTypeCode === 'PG01' || request.licenseTypeCode === 'PS02') {
+          summary.totalHours += request.quantity;
+        }
+      }
+
+      const licenseTypeData = [
+        ['RESUMEN POR TIPO DE PERMISO'],
+        [''],
+        ['Tipo de Permiso', 'Cantidad de Solicitudes', 'Total Días', 'Total Horas']
+      ];
+
+      for (const [licenseType, summary] of licenseTypeSummary) {
+        licenseTypeData.push([
+          licenseType,
+          summary.count.toString(),
+          summary.totalDays.toString(),
+          summary.totalHours.toString()
+        ]);
+      }
+
       // Crear libro de Excel
       const workbook = XLSX.utils.book_new();
       
+      // Hoja de resumen general
       const summarySheet = XLSX.utils.aoa_to_sheet(generalData);
       XLSX.utils.book_append_sheet(workbook, summarySheet, 'Resumen General');
 
+      // Hoja de detalle por empleado
       const detailSheet = XLSX.utils.aoa_to_sheet(detailData);
       XLSX.utils.book_append_sheet(workbook, detailSheet, 'Detalle por Empleado');
 
-      // Ajustar ancho de columnas
-      const colWidths = [
+      // Hoja de detalle completo de permisos
+      const detailedSheet = XLSX.utils.aoa_to_sheet(detailedPermissionsData);
+      XLSX.utils.book_append_sheet(workbook, detailedSheet, 'Detalle Completo');
+
+      // Hoja de resumen por tipo de permiso
+      const licenseTypeSheet = XLSX.utils.aoa_to_sheet(licenseTypeData);
+      XLSX.utils.book_append_sheet(workbook, licenseTypeSheet, 'Resumen por Tipo');
+
+      // Ajustar ancho de columnas para cada hoja
+      const detailColWidths = [
         { wch: 25 }, // Empleado
         { wch: 15 }, // ID
         { wch: 20 }, // Departamento
@@ -292,14 +366,37 @@ export const ReportsPage: React.FC = () => {
         { wch: 12 }, // Total Días
         { wch: 12 }  // Total Horas
       ];
-      detailSheet['!cols'] = colWidths;
+      detailSheet['!cols'] = detailColWidths;
+
+      const detailedColWidths = [
+        { wch: 25 }, // Empleado
+        { wch: 15 }, // ID Empleado
+        { wch: 20 }, // Departamento
+        { wch: 15 }, // Código Permiso
+        { wch: 30 }, // Tipo de Permiso
+        { wch: 12 }, // Fecha Inicio
+        { wch: 12 }, // Fecha Fin
+        { wch: 10 }, // Cantidad
+        { wch: 40 }, // Motivo
+        { wch: 12 }, // Estado
+        { wch: 18 }  // Fecha Solicitud
+      ];
+      detailedSheet['!cols'] = detailedColWidths;
+
+      const licenseTypeColWidths = [
+        { wch: 40 }, // Tipo de Permiso
+        { wch: 20 }, // Cantidad de Solicitudes
+        { wch: 15 }, // Total Días
+        { wch: 15 }  // Total Horas
+      ];
+      licenseTypeSheet['!cols'] = licenseTypeColWidths;
 
       // Generar archivo
-      const fileName = `Reporte_General_${format(new Date(), 'yyyyMMdd_HHmm')}.xlsx`;
+      const fileName = `Reporte_General_Detallado_${format(new Date(), 'yyyyMMdd_HHmm')}.xlsx`;
       XLSX.writeFile(workbook, fileName);
 
-      console.log(`✅ Reporte general generado: ${fileName}`);
-      alert(`Reporte general generado exitosamente: ${fileName}`);
+      console.log(`✅ Reporte general detallado generado: ${fileName}`);
+      alert(`Reporte general detallado generado exitosamente: ${fileName}`);
 
     } catch (error) {
       console.error('Error generando reporte general:', error);
@@ -374,7 +471,7 @@ export const ReportsPage: React.FC = () => {
             disabled={loading}
             className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? 'Generando...' : 'Generar Reporte General'}
+            {loading ? 'Generando...' : 'Generar Reporte General Detallado'}
           </button>
         </div>
       </div>

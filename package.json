@@ -7,7 +7,13 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "setup-env": "node scripts/setup-env-config.cjs",
+    "verify-env": "node scripts/verify-env-config.cjs",
+    "migrate-firebase": "node scripts/migrate-firebase-project.cjs",
+    "deploy-env": "node scripts/deploy-with-env.cjs",
+    "diagnose-firebase": "node scripts/diagnose-firebase.cjs",
+    "firebase-auth": "node scripts/firebase-auth.cjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",
