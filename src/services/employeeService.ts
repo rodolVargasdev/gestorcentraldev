@@ -9,7 +9,6 @@ import {
   query,
   where,
   orderBy,
-  limit,
   serverTimestamp,
   type DocumentData,
   type QueryDocumentSnapshot,
@@ -27,10 +26,13 @@ export class EmployeeService {
   // Obtener todos los empleados
   static async getAllEmployees(): Promise<Employee[]> {
     try {
+      console.log('🔍 DEBUG EmployeeService.getAllEmployees: Obteniendo todos los empleados...');
       const querySnapshot = await getDocs(collection(db, this.collectionName));
-      return querySnapshot.docs.map(doc => this.mapDocumentToEmployee(doc));
+      const employees = querySnapshot.docs.map(doc => this.mapDocumentToEmployee(doc));
+      console.log(`✅ DEBUG EmployeeService.getAllEmployees: ${employees.length} empleados obtenidos`);
+      return employees;
     } catch (error) {
-      console.error('Error getting employees:', error);
+      console.error('❌ ERROR EmployeeService.getAllEmployees:', error);
       throw new Error('Error al obtener empleados');
     }
   }
@@ -38,11 +40,12 @@ export class EmployeeService {
   // Obtener empleados con paginación y filtros
   static async getEmployees(
     page: number = 1,
-    pageSize: number = 10,
+    pageSize: number = 50,
     filters?: SearchFilters,
     sort?: SortOptions
   ): Promise<PaginatedResponse<Employee>> {
     try {
+      // Obtener todos los empleados primero para aplicar filtros
       let q: Query<DocumentData, DocumentData> = collection(db, this.collectionName);
 
       // Aplicar filtros
@@ -68,22 +71,30 @@ export class EmployeeService {
         q = query(q, orderBy('firstName', 'asc'));
       }
 
-      // Aplicar paginación
-      q = query(q, limit(pageSize));
-
       const querySnapshot = await getDocs(q);
-      const employees = querySnapshot.docs.map(doc => this.mapDocumentToEmployee(doc));
+      const allEmployees = querySnapshot.docs.map(doc => this.mapDocumentToEmployee(doc));
 
-      // Obtener total de documentos
-      const totalSnapshot = await getDocs(collection(db, this.collectionName));
-      const total = totalSnapshot.size;
+      console.log('🔍 DEBUG EmployeeService.getEmployees:');
+      console.log('- Total empleados en Firestore:', allEmployees.length);
+      console.log('- Página solicitada:', page);
+      console.log('- Tamaño de página:', pageSize);
+
+      // Aplicar paginación en memoria (más simple y funcional)
+      const startIndex = (page - 1) * pageSize;
+      const endIndex = startIndex + pageSize;
+      const employees = allEmployees.slice(startIndex, endIndex);
+
+      console.log('- Índice de inicio:', startIndex);
+      console.log('- Índice de fin:', endIndex);
+      console.log('- Empleados en esta página:', employees.length);
+      console.log('- Total de páginas:', Math.ceil(allEmployees.length / pageSize));
 
       return {
         data: employees,
-        total: total,
+        total: allEmployees.length,
         page: page,
         pageSize: pageSize,
-        totalPages: Math.ceil(total / pageSize),
+        totalPages: Math.ceil(allEmployees.length / pageSize),
       };
     } catch (error) {
       console.error('Error getting employees with pagination:', error);

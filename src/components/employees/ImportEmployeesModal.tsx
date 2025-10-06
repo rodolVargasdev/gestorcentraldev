@@ -179,12 +179,12 @@ export const ImportEmployeesModal: React.FC<ImportEmployeesModalProps> = ({
     const errors: Array<{ row: number; employeeId: string; errors: string[] }> = [];
     const success: ImportEmployee[] = [];
 
-    // Validar límite de 100 empleados
-    if (data.length > 100) {
+    // Validar límite de 500 empleados
+    if (data.length > 500) {
       errors.push({
         row: 0,
         employeeId: 'LÍMITE EXCEDIDO',
-        errors: [`No se pueden importar más de 100 empleados a la vez. El archivo contiene ${data.length} empleados.`]
+        errors: [`No se pueden importar más de 500 empleados a la vez. El archivo contiene ${data.length} empleados.`]
       });
       setValidationResults({ success: [], errors });
       return;

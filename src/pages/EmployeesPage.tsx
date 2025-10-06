@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { useEmployeeStore } from '../stores/employeeStore';
 import { useLicenseStore } from '../stores/licenseStore';
+import type { Employee } from '../types';
 
 
 
@@ -39,17 +40,11 @@ import { useLicenseStore } from '../stores/licenseStore';
 
 
 
-// Departamentos de ejemplo
-const DEPARTMENTS = [
-  'Tecnología',
-  'Recursos Humanos',
-  'Finanzas',
-  'Ventas',
-  'Marketing',
-  'Operaciones',
-  'Legal',
-  'Administración'
-];
+// Departamentos dinámicos basados en los empleados actuales
+const getDepartmentsFromEmployees = (employees: Employee[]) => {
+  const departments = [...new Set(employees.map(emp => emp.department))];
+  return departments.sort();
+};
 
 export const EmployeesPage: React.FC = () => {
   const navigate = useNavigate();
@@ -57,9 +52,7 @@ export const EmployeesPage: React.FC = () => {
   const [filterDepartment, setFilterDepartment] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   
-  // Paginación
-  const [currentPage, setCurrentPage] = useState(1);
-  const [employeesPerPage, setEmployeesPerPage] = useState(50);
+  // Paginación - usar la del store
   const [showAll, setShowAll] = useState(false);
 
   // Estado para los modales
@@ -71,7 +64,7 @@ export const EmployeesPage: React.FC = () => {
   const [resettingAnnual, setResettingAnnual] = useState(false);
 
   // Obtener datos del store de Firebase
-  const { employees, loading, loadEmployees, deleteEmployee, importEmployees } = useEmployeeStore();
+  const { employees, loading, loadAllEmployees, deleteEmployee, importEmployees } = useEmployeeStore();
   const { resetAllAnnualAvailability, resetAllMonthlyAvailability } = useLicenseStore();
 
 
@@ -79,27 +72,41 @@ export const EmployeesPage: React.FC = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        await loadEmployees();
+        console.log('🔍 DEBUG EmployeesPage - Cargando todos los empleados...');
+        await loadAllEmployees();
+        console.log('🔍 DEBUG EmployeesPage - Empleados cargados:', employees.length);
       } catch (error) {
-        console.error('Error cargando empleados:', error);
+        console.error('❌ ERROR EmployeesPage - Error cargando empleados:', error);
       }
     };
 
     loadData();
-  }, [loadEmployees]);
+  }, [loadAllEmployees]);
 
+  // Estados de paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const [employeesPerPage, setEmployeesPerPage] = useState(50);
+
+  // Aplicar filtros y búsqueda en el frontend
   const filteredEmployees = employees.filter(employee => {
     const fullName = `${employee.firstName} ${employee.lastName}`.toLowerCase();
     const employeeId = employee.employeeId.toLowerCase();
     const email = employee.email.toLowerCase();
     const position = employee.position.toLowerCase();
+    const department = employee.department.toLowerCase();
     
-    const matchesSearch = fullName.includes(searchTerm.toLowerCase()) ||
-                         employeeId.includes(searchTerm.toLowerCase()) ||
-                         email.includes(searchTerm.toLowerCase()) ||
-                         position.includes(searchTerm.toLowerCase());
+    // Filtro de búsqueda
+    const matchesSearch = searchTerm === '' || 
+      fullName.includes(searchTerm.toLowerCase()) ||
+      employeeId.includes(searchTerm.toLowerCase()) ||
+      email.includes(searchTerm.toLowerCase()) ||
+      position.includes(searchTerm.toLowerCase());
     
-    const matchesDepartment = filterDepartment === 'all' || employee.department === filterDepartment;
+    // Filtro de departamento
+    const matchesDepartment = filterDepartment === 'all' || 
+      department.includes(filterDepartment.toLowerCase());
+    
+    // Filtro de estado
     const matchesStatus = filterStatus === 'all' || 
       (filterStatus === 'active' && employee.isActive) || 
       (filterStatus === 'inactive' && !employee.isActive);
@@ -108,15 +115,53 @@ export const EmployeesPage: React.FC = () => {
   });
 
   // Calcular paginación
-  const indexOfLastEmployee = showAll ? filteredEmployees.length : currentPage * employeesPerPage;
-  const indexOfFirstEmployee = showAll ? 0 : indexOfLastEmployee - employeesPerPage;
-  const currentEmployees = showAll ? filteredEmployees : filteredEmployees.slice(indexOfFirstEmployee, indexOfLastEmployee);
-  const totalPages = showAll ? 1 : Math.ceil(filteredEmployees.length / employeesPerPage);
+  const totalFilteredEmployees = filteredEmployees.length;
+  const totalPages = Math.ceil(totalFilteredEmployees / employeesPerPage);
+  const startIndex = (currentPage - 1) * employeesPerPage;
+  const endIndex = startIndex + employeesPerPage;
+  const currentEmployees = filteredEmployees.slice(startIndex, endIndex);
+  
+  // Obtener departamentos dinámicamente
+  const availableDepartments = getDepartmentsFromEmployees(employees);
 
-  // Resetear página cuando cambian los filtros
+  // Limpiar filtros cuando se cargan nuevos empleados
+  useEffect(() => {
+    if (employees.length > 0) {
+      console.log('🔍 DEBUG EmployeesPage - Empleados cargados, verificando filtros...');
+      const availableDepartments = getDepartmentsFromEmployees(employees);
+      
+      // Si el departamento filtrado ya no existe, resetear a 'all'
+      if (filterDepartment !== 'all' && !availableDepartments.includes(filterDepartment)) {
+        console.log('🔍 DEBUG EmployeesPage - Departamento filtrado ya no existe, reseteando...');
+        setFilterDepartment('all');
+      }
+    }
+  }, [employees, filterDepartment]);
+
+  // Resetear página cuando cambien los filtros
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, filterDepartment, filterStatus, employeesPerPage, showAll]);
+  }, [searchTerm, filterDepartment, filterStatus]);
+
+  // Resetear página cuando cambie el tamaño de página
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [employeesPerPage]);
+
+  // Debug: Log cuando cambien los empleados
+  useEffect(() => {
+    console.log('🔍 DEBUG EmployeesPage - Estado actualizado:');
+    console.log('- Empleados en store:', employees.length);
+    console.log('- Término de búsqueda:', searchTerm);
+    console.log('- Filtro departamento:', filterDepartment);
+    console.log('- Filtro estado:', filterStatus);
+    console.log('- Empleados filtrados:', totalFilteredEmployees);
+    console.log('- Página actual:', currentPage);
+    console.log('- Total de páginas:', totalPages);
+    console.log('- Empleados por página:', employeesPerPage);
+    console.log('- Empleados mostrados:', currentEmployees.length);
+    console.log('- Rango mostrado:', `${startIndex + 1}-${Math.min(endIndex, totalFilteredEmployees)} de ${totalFilteredEmployees}`);
+  }, [employees, searchTerm, filterDepartment, filterStatus, totalFilteredEmployees, currentPage, totalPages, employeesPerPage, currentEmployees, startIndex, endIndex]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -215,7 +260,7 @@ export const EmployeesPage: React.FC = () => {
       const result = await resetAllMonthlyAvailability();
 
       // Recargar empleados para mostrar cambios
-      await loadEmployees();
+      await loadAllEmployees();
 
       alert(`Reset mensual completado:\n✅ ${result.success} empleados actualizados\n❌ ${result.failed} errores`);
 
@@ -248,7 +293,7 @@ export const EmployeesPage: React.FC = () => {
       const result = await resetAllAnnualAvailability();
 
       // Recargar empleados para mostrar cambios
-      await loadEmployees();
+      await loadAllEmployees();
 
       alert(`Reset anual completado:\n✅ ${result.success} empleados actualizados\n❌ ${result.failed} errores`);
 
@@ -305,6 +350,7 @@ export const EmployeesPage: React.FC = () => {
   };
 
   const handlePageChange = (page: number) => {
+    console.log('🔍 DEBUG EmployeesPage - Navegación de página solicitada:', page);
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -582,7 +628,7 @@ export const EmployeesPage: React.FC = () => {
                     className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                   >
                     <option value="all">Todos los departamentos</option>
-                    {DEPARTMENTS.map(dept => (
+                    {availableDepartments.map(dept => (
                       <option key={dept} value={dept}>{dept}</option>
                     ))}
                   </select>
@@ -609,7 +655,7 @@ export const EmployeesPage: React.FC = () => {
           {/* Results Info */}
           <div className="mb-4 flex justify-between items-center">
             <div className="text-sm text-gray-600">
-              Mostrando {indexOfFirstEmployee + 1} a {Math.min(indexOfLastEmployee, filteredEmployees.length)} de {filteredEmployees.length.toLocaleString()} empleados
+              Mostrando {employees.length} empleados
             </div>
             <div className="flex items-center space-x-4">
               {/* Controles de paginación */}
@@ -620,17 +666,17 @@ export const EmployeesPage: React.FC = () => {
                   onChange={(e) => {
                     if (e.target.value === 'all') {
                       setShowAll(true);
-                      setCurrentPage(1);
                     } else {
                       setShowAll(false);
-                      setEmployeesPerPage(Number(e.target.value));
-                      setCurrentPage(1);
+                      setEmployeesPerPage(parseInt(e.target.value));
                     }
                   }}
                   className="text-sm border border-gray-300 rounded px-2 py-1"
                 >
+                  <option value="25">25 por página</option>
                   <option value="50">50 por página</option>
                   <option value="100">100 por página</option>
+                  <option value="200">200 por página</option>
                   <option value="all">Todos</option>
                 </select>
               </div>
@@ -746,13 +792,14 @@ export const EmployeesPage: React.FC = () => {
           </div>
 
           {/* Pagination */}
+          {/* Paginación */}
           {!showAll && totalPages > 1 && (
             <div className="flex justify-center items-center space-x-2 mb-8">
               {renderPaginationButtons()}
             </div>
           )}
 
-          {filteredEmployees.length === 0 && (
+          {employees.length === 0 && (
             <div className="text-center py-12">
               <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">
@@ -785,7 +832,7 @@ export const EmployeesPage: React.FC = () => {
         isOpen={showExportModal}
         onClose={() => setShowExportModal(false)}
         employees={employees}
-        departments={DEPARTMENTS}
+        departments={availableDepartments}
       />
     </div>
   );

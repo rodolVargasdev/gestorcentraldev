@@ -29,6 +29,7 @@ interface EmployeeState {
 interface EmployeeActions {
   // Acciones de carga de datos
   loadEmployees: (page?: number, filters?: SearchFilters, sort?: SortOptions) => Promise<void>;
+  loadAllEmployees: () => Promise<void>;
   loadEmployeeById: (id: string) => Promise<void>;
 
   refreshEmployees: () => Promise<void>;
@@ -69,7 +70,7 @@ const initialState: EmployeeState = {
   currentPage: 1,
   totalPages: 0,
   totalItems: 0,
-  pageSize: 10,
+  pageSize: 50,
   filters: {},
   sortOptions: { field: 'firstName', direction: 'asc' },
   isFormOpen: false,
@@ -86,12 +87,24 @@ export const useEmployeeStore = create<EmployeeStore>()(
         try {
           set({ loading: true, error: null });
           
+          console.log('🔍 DEBUG EmployeeStore.loadEmployees:');
+          console.log('- Página solicitada:', page);
+          console.log('- Filtros:', filters);
+          console.log('- Ordenamiento:', sort);
+          console.log('- Tamaño de página del store:', get().pageSize);
+          
           const response = await EmployeeService.getEmployees(
             page,
             get().pageSize,
             filters,
             sort
           );
+          
+          console.log('🔍 DEBUG EmployeeStore - Respuesta recibida:');
+          console.log('- Empleados recibidos:', response.data.length);
+          console.log('- Página actual:', response.page);
+          console.log('- Total de páginas:', response.totalPages);
+          console.log('- Total de empleados:', response.total);
           
           set({
             employees: response.data,
@@ -102,8 +115,36 @@ export const useEmployeeStore = create<EmployeeStore>()(
           });
         } catch (error: unknown) {
           const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+          console.error('❌ ERROR EmployeeStore.loadEmployees:', errorMessage);
           set({
             error: errorMessage || 'Error al cargar empleados',
+            loading: false,
+          });
+        }
+      },
+
+      loadAllEmployees: async () => {
+        try {
+          set({ loading: true, error: null });
+          
+          console.log('🔍 DEBUG EmployeeStore.loadAllEmployees: Cargando todos los empleados...');
+          const allEmployees = await EmployeeService.getAllEmployees();
+          
+          console.log('🔍 DEBUG EmployeeStore.loadAllEmployees - Respuesta recibida:');
+          console.log('- Empleados recibidos:', allEmployees.length);
+          
+          set({
+            employees: allEmployees,
+            currentPage: 1,
+            totalPages: 1,
+            totalItems: allEmployees.length,
+            loading: false,
+          });
+        } catch (error: unknown) {
+          const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+          console.error('❌ ERROR EmployeeStore.loadAllEmployees:', errorMessage);
+          set({
+            error: errorMessage || 'Error al cargar todos los empleados',
             loading: false,
           });
         }
@@ -131,7 +172,7 @@ export const useEmployeeStore = create<EmployeeStore>()(
 
 
       refreshEmployees: async () => {
-        await get().loadEmployees(get().currentPage);
+        await get().loadAllEmployees();
       },
 
       // Acciones CRUD
@@ -139,18 +180,24 @@ export const useEmployeeStore = create<EmployeeStore>()(
         try {
           set({ loading: true, error: null });
           
-          await EmployeeService.createEmployee(employeeData);
+          console.log('🔍 DEBUG EmployeeStore.createEmployee: Creando empleado...');
+          const newEmployee = await EmployeeService.createEmployee(employeeData);
+          console.log('✅ DEBUG EmployeeStore.createEmployee: Empleado creado:', newEmployee.id);
           
-          // Recargar la lista
-          await get().loadEmployees(get().currentPage);
-          
+          // Actualización inteligente: solo agregar el nuevo empleado
+          const currentEmployees = get().employees;
           set({
+            employees: [...currentEmployees, newEmployee],
+            totalItems: currentEmployees.length + 1,
             loading: false,
             isFormOpen: false,
             isEditing: false,
           });
+          
+          console.log('✅ DEBUG EmployeeStore.createEmployee: Lista actualizada, total empleados:', get().employees.length);
         } catch (error: unknown) {
           const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+          console.error('❌ ERROR EmployeeStore.createEmployee:', errorMessage);
           set({
             error: errorMessage || 'Error al crear empleado',
             loading: false,
@@ -168,7 +215,17 @@ export const useEmployeeStore = create<EmployeeStore>()(
           
           console.log(`🔄 Iniciando importación de ${employeesData.length} empleados...`);
           
-          for (const employeeData of employeesData) {
+          // Procesar en lotes para importaciones grandes
+          const batchSize = employeesData.length > 100 ? 25 : 50;
+          const totalBatches = Math.ceil(employeesData.length / batchSize);
+          
+          for (let i = 0; i < employeesData.length; i += batchSize) {
+            const batch = employeesData.slice(i, i + batchSize);
+            const currentBatch = Math.floor(i / batchSize) + 1;
+            
+            console.log(`📦 Procesando lote ${currentBatch}/${totalBatches} (${batch.length} empleados)`);
+            
+            for (const employeeData of batch) {
             try {
               console.log(`📝 Creando empleado: ${employeeData.employeeId} - ${employeeData.firstName} ${employeeData.lastName}`);
               const newEmployee = await EmployeeService.createEmployee(employeeData);
@@ -183,16 +240,26 @@ export const useEmployeeStore = create<EmployeeStore>()(
               });
               // Continuar con el siguiente empleado
             }
+            }
+            
+            // Pausa entre lotes para evitar sobrecarga
+            if (i + batchSize < employeesData.length) {
+              console.log(`⏳ Pausa entre lotes...`);
+              await new Promise(resolve => setTimeout(resolve, 200));
+            }
           }
           
           console.log(`📊 Importación completada: ${createdEmployees.length} exitosos, ${failedEmployees.length} fallidos`);
           
-          // Recargar la lista
-          await get().loadEmployees(get().currentPage);
-          
+          // Actualización inteligente: solo agregar los empleados nuevos
+          const currentEmployees = get().employees;
           set({
+            employees: [...currentEmployees, ...createdEmployees],
+            totalItems: currentEmployees.length + createdEmployees.length,
             loading: false,
           });
+          
+          console.log('✅ DEBUG EmployeeStore.importEmployees: Lista actualizada, total empleados:', get().employees.length);
           
           return {
             success: createdEmployees.length,
@@ -214,19 +281,25 @@ export const useEmployeeStore = create<EmployeeStore>()(
         try {
           set({ loading: true, error: null });
           
-          await EmployeeService.updateEmployee(id, updates);
+          const updatedEmployee = await EmployeeService.updateEmployee(id, updates);
           
-          // Recargar la lista y el elemento actual
-          await Promise.all([
-            get().loadEmployees(get().currentPage),
-            get().loadEmployeeById(id),
-          ]);
+          // Actualización inteligente: solo actualizar el empleado específico
+          const currentEmployees = get().employees;
+          const updatedEmployees = currentEmployees.map(emp => 
+            emp.id === id ? { ...emp, ...updatedEmployee } : emp
+          );
           
           set({
+            employees: updatedEmployees,
             loading: false,
             isFormOpen: false,
             isEditing: false,
           });
+          
+          // Recargar solo el empleado específico para detalles
+          await get().loadEmployeeById(id);
+          
+          console.log('✅ DEBUG EmployeeStore.updateEmployee: Empleado actualizado:', id);
         } catch (error: unknown) {
           const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
           set({
@@ -242,13 +315,18 @@ export const useEmployeeStore = create<EmployeeStore>()(
           
           await EmployeeService.deleteEmployee(id);
           
-          // Recargar la lista
-          await get().loadEmployees(get().currentPage);
+          // Actualización inteligente: solo remover el empleado específico
+          const currentEmployees = get().employees;
+          const filteredEmployees = currentEmployees.filter(emp => emp.id !== id);
           
           set({
+            employees: filteredEmployees,
+            totalItems: filteredEmployees.length,
             loading: false,
             currentEmployee: null,
           });
+          
+          console.log('✅ DEBUG EmployeeStore.deleteEmployee: Empleado eliminado:', id, 'Total empleados:', filteredEmployees.length);
         } catch (error: unknown) {
           const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
           set({
