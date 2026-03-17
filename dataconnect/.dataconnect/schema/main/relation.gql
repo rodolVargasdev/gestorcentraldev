@@ -78,6 +78,10 @@ extend type Document {
   ✨ Maximum of the `createdAt` field in the `Document` table.
   """
   createdAt_max: Timestamp @fdc_generated(from: "Document.createdAt", purpose: QUERY_MAX)
+  """
+  A generated field that is used for caching results in SDKs.
+  """
+  _id: ID! @fdc_generated(from: "Document.id", purpose: GLOBAL_ID)
 }
 extend type License {
   """
@@ -288,6 +292,10 @@ extend type License {
   ✨ Maximum of the `issueDate` field in the `License` table.
   """
   issueDate_max: Date @fdc_generated(from: "License.issueDate", purpose: QUERY_MAX)
+  """
+  A generated field that is used for caching results in SDKs.
+  """
+  _id: ID! @fdc_generated(from: "License.id", purpose: GLOBAL_ID)
 }
 extend type LicenseType {
   """
@@ -376,6 +384,10 @@ extend type LicenseType {
   ✨ Maximum of the `createdAt` field in the `LicenseType` table.
   """
   createdAt_max: Timestamp @fdc_generated(from: "LicenseType.createdAt", purpose: QUERY_MAX)
+  """
+  A generated field that is used for caching results in SDKs.
+  """
+  _id: ID! @fdc_generated(from: "LicenseType.id", purpose: GLOBAL_ID)
 }
 extend type Notification {
   """
@@ -465,6 +477,10 @@ extend type Notification {
   ✨ Maximum of the `notificationDate` field in the `Notification` table.
   """
   notificationDate_max: Timestamp @fdc_generated(from: "Notification.notificationDate", purpose: QUERY_MAX)
+  """
+  A generated field that is used for caching results in SDKs.
+  """
+  _id: ID! @fdc_generated(from: "Notification.id", purpose: GLOBAL_ID)
 }
 extend type User {
   """
@@ -562,4 +578,8 @@ extend type User {
   ✨ Maximum of the `createdAt` field in the `User` table.
   """
   createdAt_max: Timestamp @fdc_generated(from: "User.createdAt", purpose: QUERY_MAX)
+  """
+  A generated field that is used for caching results in SDKs.
+  """
+  _id: ID! @fdc_generated(from: "User.id", purpose: GLOBAL_ID)
 }
