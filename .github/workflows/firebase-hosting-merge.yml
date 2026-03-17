@@ -15,7 +15,6 @@ jobs:
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{
-            secrets.FIREBASE_SERVICE_ACCOUNT_GESTOR_LICENCIAS_FIREBAS_76C57 }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GESTORCENTRALDEV }}
           channelId: live
-          projectId: gestor-licencias-firebas-76c57
+          projectId: gestorcentraldev

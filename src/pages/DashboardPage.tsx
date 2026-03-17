@@ -64,7 +64,7 @@ export function DashboardPage() {
   ]);
 
   // Obtener datos de los stores
-  const { employees, loadEmployees } = useEmployeeStore();
+  const { employees, loadAllEmployees } = useEmployeeStore();
 
   const handleNavigation = (path: string) => {
     navigate(path);
@@ -75,16 +75,18 @@ export function DashboardPage() {
     const loadDashboardData = async () => {
       try {
         setLoading(true);
-        await loadEmployees();
+        console.log('🔍 DASHBOARD DEBUG - Cargando todos los empleados...');
+        await loadAllEmployees();
+        console.log('🔍 DASHBOARD DEBUG - Empleados cargados:', employees.length);
       } catch (error) {
-        console.error('Error cargando datos del dashboard:', error);
+        console.error('❌ ERROR DASHBOARD - Error cargando datos:', error);
       } finally {
         setLoading(false);
       }
     };
 
     loadDashboardData();
-  }, [loadEmployees]);
+  }, [loadAllEmployees]);
 
   // Calcular estadísticas en tiempo real
   useEffect(() => {
@@ -92,6 +94,8 @@ export function DashboardPage() {
       // Debug: Log de datos recibidos
       console.log('🔍 DASHBOARD DEBUG - Datos recibidos:');
       console.log('Empleados:', employees.length, employees);
+      console.log('🔍 DASHBOARD DEBUG - Comparación con página de empleados:');
+      console.log('- Total empleados en dashboard:', employees.length);
 
       // Empleados activos
       const activeEmployees = employees.filter(emp => emp.isActive).length;

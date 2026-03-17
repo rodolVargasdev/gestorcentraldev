@@ -1,5 +1,7 @@
 {
   "projects": {
-    "default": "g-license-mgr-dev-gsv000-015"
+    "default": "gestorcentraldev",
+    "dev": "gestorcentraldev",
+    "prod": "g-license-mgr-dev-gsv000-015"
   }
 }
