@@ -5,19 +5,14 @@
  * Uso: node scripts/create-admin-user.mjs <email> <password> [role]
  */
 
+import { createRequire } from 'module';
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { getFirestore, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
-// Configuración de Firebase
-const firebaseConfig = {
-  apiKey: "AIzaSyA5q4HOusvXW8wObkuyrB8it1y7Tyq1op0",
-  authDomain: "licencias-gestor.firebaseapp.com",
-  projectId: "licencias-gestor",
-  storageBucket: "licencias-gestor.firebasestorage.app",
-  messagingSenderId: "592435804089",
-  appId: "1:592435804089:web:b2e6f3d3db466f18372868"
-};
+const require = createRequire(import.meta.url);
+const { getFirebaseConfig } = require('./lib/firebase-env.cjs');
+const firebaseConfig = getFirebaseConfig();
 
 // Función para crear usuario administrador
 async function createAdminUser(email, password, role = 'super-admin') {

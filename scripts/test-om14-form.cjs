@@ -12,15 +12,8 @@
 const { initializeApp } = require('firebase/app');
 const { getFirestore, collection, getDocs, doc, getDoc } = require('firebase/firestore');
 
-// Configuración de Firebase (usar la misma que en el proyecto)
-const firebaseConfig = {
-  apiKey: "AIzaSyBXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-  authDomain: "gestor-licencias-XXXXX.firebaseapp.com",
-  projectId: "gestor-licencias-XXXXX",
-  storageBucket: "gestor-licencias-XXXXX.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abcdef123456"
-};
+const { getFirebaseConfig } = require('./lib/firebase-env.cjs');
+const firebaseConfig = getFirebaseConfig();
 
 // Inicializar Firebase
 const app = initializeApp(firebaseConfig);

@@ -2,15 +2,8 @@ const { initializeApp } = require('firebase/app');
 const { getAuth, signInWithEmailAndPassword } = require('firebase/auth');
 const { getFirestore, doc, setDoc, serverTimestamp } = require('firebase/firestore');
 
-// Configuración de Firebase (usar las mismas credenciales que en el proyecto)
-const firebaseConfig = {
-  apiKey: "tu-api-key-aqui",
-  authDomain: "tu-proyecto.firebaseapp.com",
-  projectId: "tu-proyecto-id",
-  storageBucket: "tu-proyecto.appspot.com",
-  messagingSenderId: "123456789012",
-  appId: "1:123456789012:web:abcdefghijklmnop"
-};
+const { getFirebaseConfig } = require('./scripts/lib/firebase-env.cjs');
+const firebaseConfig = getFirebaseConfig();
 
 // Inicializar Firebase
 const app = initializeApp(firebaseConfig);

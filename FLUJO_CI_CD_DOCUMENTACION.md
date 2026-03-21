@@ -141,9 +141,25 @@ git rm --cached nombre-archivo.json
 git commit --amend -m "chore: remove credentials"
 ```
 
-### 2. Pantalla en blanco en produccion o pre-produccion
+### 2. Alertas de Secret scanning (API keys de Google en el historial)
+GitHub puede marcar como filtracion publica cualquier cadena que coincida con el formato de **Google API Key** (por ejemplo en `*.ts`, `*.js`, `*.html`, `*.cjs`).
+
+**Que hicimos en el codigo:**
+- La app web ya usa `src/lib/firebase.config.ts` con `import.meta.env.VITE_*` (sin claves en el repositorio).
+- Scripts de Node y paginas de prueba usan `scripts/lib/firebase-env.cjs` o `src/scripts/firebaseEnvForScripts.ts`, leyendo **solo** `.env.local` / `.env`.
+- `test-firebase.html` quedo con placeholders; para probar en local, edita el archivo **sin commitear** o usa una copia local ignorada.
+
+**Que debes hacer si las alertas siguen abiertas:**
+1. Tras subir los cambios, en GitHub revisa **Security > Secret scanning** y cierra o marca como resuelto segun la guia de GitHub (si el secreto ya no esta en la rama por defecto).
+2. Si la clave **alguna vez** estuvo en un commit publico, asume que quedo expuesta: en **Google Cloud Console** (APIs y servicios > Credenciales) **restringe** la API key o **crea una nueva** y actualiza `.env.local` y los secretos de GitHub Actions.
+3. Para borrar el secreto del **historial** de Git (commits viejos), hace falta `git filter-repo` o BFG y un force-push; es operacion delicada. Lo habitual es **rotar la clave** y dejar el historial como referencia interna.
+
+### 3. Pantalla en blanco en produccion o pre-produccion
 - **Por que ocurre:** Error `Uncaught FirebaseError: Firebase: Error (auth/invalid-api-key)`. Vite empaqueto el codigo (en GitHub Actions) sin recibir variables de entorno. 
 - **Como solucionarlo:** 
   1. Verificar que el archivo `deploy-*.yml` de ese entorno tenga el bloque `env:` en el paso de build.
   2. Comprobar que los nombres de los secretos en el YAML coincidan EXACTAMENTE (sensible a mayusculas) con los nombres de los secretos guardados en GitHub Settings.
   3. Ejecutar de nuevo el flujo haciendo clic en "Re-run all jobs" en GitHub.
+
+### Scripts Node y datos de prueba
+Cualquier script bajo `scripts/` o `src/scripts/` que use Firebase debe ejecutarse desde la raiz del proyecto con `.env.local` configurado (mismas variables `VITE_FIREBASE_*` que la app). Si faltan variables, el script fallara con un mensaje explicito en lugar de usar credenciales embebidas.
