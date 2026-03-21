@@ -2,6 +2,7 @@
   "projects": {
     "default": "gestorcentraldev",
     "dev": "gestorcentraldev",
+    "stg": "gestorcentralstg",
     "prod": "g-license-mgr-dev-gsv000-015"
   }
 }

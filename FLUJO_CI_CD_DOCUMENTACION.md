@@ -1,120 +1,149 @@
-# Guia de Configuracion de Integracion y Despliegue Continuo (CI/CD) con Firebase y GitHub Actions
+# Guia de Configuracion de Arquitectura (Dev, Stg, Prod) y CI/CD con Firebase y GitHub Actions
 
 ## Objetivo
 Este documento sirve como respaldo detallado de los pasos realizados para configurar un flujo de trabajo profesional utilizando Git, GitHub Actions y multiples entornos de Firebase. El proposito es tener una referencia clara en caso de requerir replicar esta arquitectura desde cero en un nuevo repositorio.
 
-## Prerrequisitos
-- Tener instalado Node.js y npm.
-- Tener instalado Git.
-- Tener instalado Firebase CLI de manera global (`npm install -g firebase-tools`).
-- Tener acceso de administrador a un repositorio en GitHub.
-- Tener cuentas en Firebase / Google Cloud Platform.
-- Disponer de al menos dos proyectos creados en la consola de Firebase:
-  - Uno exclusivo para Desarrollo/Pruebas.
-  - Uno exclusivo para Produccion.
+## Arquitectura de 3 Ambientes
+El estandar implementado contempla 3 niveles de despliegue para garantizar la calidad y seguridad del producto:
+1. **DEV (Desarrollo):** Entorno de pruebas tecnicas conectado a la rama `develop`. Utilizado exclusivamente por programadores.
+2. **STG (Staging/Pre-produccion):** Clon exacto de produccion conectado a la rama `staging`. Utilizado para QA (Quality Assurance) y pruebas de aceptacion de usuario (UAT).
+3. **PRD (Produccion):** Entorno final de los usuarios conectado a la rama `main`. Solo recibe codigo que ya fue aprobado en Staging.
 
-## Paso a Paso para la Configuracion
+---
 
-### 1. Configuracion del Flujo de Ramas (Git Flow)
-Para proteger el entorno de produccion, se establece una estrategia de ramas:
-- Rama `main`: Codigo de produccion estable. Solo recibe cambios mediante Pull Requests que han sido revisados y probados.
-- Rama `develop`: Entorno de desarrollo. Aqui se integran las nuevas funcionalidades (features) y correcciones antes de unirlas a produccion.
+## 1. Configuracion Inicial de Proyectos en Firebase
+Antes de tocar el codigo, se deben crear los 3 proyectos en Google Cloud / Firebase Console.
 
-Comandos basicos para iniciar la separacion localmente:
+### Creacion y Configuracion por cada entorno (repetir 3 veces)
+1. Ir a la consola de Firebase y crear el proyecto (ej. `proyecto-dev`, `proyecto-stg`, `proyecto-prd`).
+2. Habilitar **Authentication**: Activar metodo de Email/Password.
+3. Habilitar **Firestore Database**: Crear base de datos (se recomienda usar siempre la misma region, ej. `nam5`).
+4. Habilitar **Hosting**: Simplemente iniciar el servicio.
+5. **Registrar Aplicacion Web (Frontend):**
+   - Ir a Configuracion del Proyecto > Tus apps.
+   - Crear aplicacion Web.
+   - Copiar el bloque de configuracion (`firebaseConfig`) que contiene llaves como `apiKey`, `projectId`, etc.
+6. **Generar Cuenta de Servicio (Backend/CI-CD):**
+   - Ir a Configuracion del Proyecto > Cuentas de servicio.
+   - Clic en "Generar nueva clave privada" y guardar el archivo JSON.
+
+---
+
+## 2. Configuracion del Flujo de Ramas (Git Flow)
+Para proteger el entorno de produccion, se establece una estrategia estricta de ramas locales.
+
 ```bash
+# Inicializar repositorio y subir la rama principal (PRD)
+git branch -M main
+git push -u origin main
+
+# Crear y subir rama de Staging (STG)
+git checkout -b staging
+git push -u origin staging
+
+# Crear y subir rama de Desarrollo (DEV)
 git checkout -b develop
 git push -u origin develop
 ```
+*Regla de oro:* Todo desarrollo inicia creando una rama `feature/nombre` desde `develop`. Una vez terminada, se integra a `develop`. Al finalizar el ciclo de desarrollo (sprint), `develop` se une a `staging`. Al ser aprobado, `staging` se une a `main`.
 
-### 2. Vinculacion de Entornos de Firebase
-El archivo `.firebaserc` en la raiz del proyecto le indica a Firebase CLI a que proyectos reales en la nube debe apuntar, dependiendo del alias que se utilice.
+---
 
-Se debe configurar para separar claramente hacia donde apuntan los comandos de despliegue:
+## 3. Vinculacion de Entornos Locales de Firebase
+El archivo `.firebaserc` en la raiz del proyecto le indica a Firebase CLI a que proyectos reales en la nube debe apuntar, dependiendo del alias.
+
 ```json
 {
   "projects": {
-    "default": "id-proyecto-desarrollo",
-    "dev": "id-proyecto-desarrollo",
-    "prod": "id-proyecto-produccion"
+    "default": "id-proyecto-dev",
+    "dev": "id-proyecto-dev",
+    "stg": "id-proyecto-stg",
+    "prod": "id-proyecto-prd"
   }
 }
 ```
 
-### 3. Configuracion de GitHub Actions
-Se utilizan dos flujos de trabajo (workflows automatizados) ubicados en la carpeta `.github/workflows/`:
-1. `firebase-hosting-pull-request.yml`: Se ejecuta automaticamente al crear un Pull Request hacia `main` o `develop`. Crea un canal de vista previa temporal (Preview Channel) en Firebase, devolviendo una URL efimera para probar los cambios antes de aceptarlos.
-2. `firebase-hosting-merge.yml`: Se ejecuta automaticamente al hacer merge (fusionar codigo) directamente a la rama `main`. Realiza el despliegue final y permanente a la URL en vivo (produccion).
+---
 
-**Importante:** Para que Vite (la herramienta de construccion de React) pueda empaquetar el proyecto correctamente, es vital inyectar las variables de entorno de Firebase durante el proceso de build en la nube. De lo contrario, los archivos generados estaran vacios de credenciales y no sabran como conectarse a la base de datos.
+## 4. Configuracion de GitHub Actions (Automatizacion)
+Se establecen 3 flujos de trabajo en `.github/workflows/` para manejar automaticamente los despliegues de cada entorno sin intervencion manual.
 
-Ejemplo del paso de inyeccion en los archivos `.yml`:
+### A. Deploy Preview (Entorno DEV)
+Archivo: `deploy-preview.yml`. Se ejecuta automaticamente al crear un Pull Request hacia `develop` o `main`. Despliega a una URL temporal utilizando el entorno de desarrollo.
+*Utiliza los secretos de GitHub terminados en `_DEV`.*
+
+### B. Deploy Staging (Entorno STG)
+Archivo: `deploy-staging.yml`. Se ejecuta automaticamente al hacer merge (fusionar codigo) en la rama `staging`. Despliega a la URL real de staging.
+*Utiliza los secretos de GitHub terminados en `_STG`.*
+
+### C. Deploy Production (Entorno PRD)
+Archivo: `deploy-production.yml`. Se ejecuta automaticamente al hacer merge en la rama `main`. Despliega al entorno oficial de produccion.
+*Utiliza los secretos de GitHub terminados en `_PRD`.*
+
+**Paso de Inyeccion de Variables:**
+Para que Vite (herramienta de construccion) funcione, las variables deben inyectarse en el paso de build (ejemplo del entorno staging):
 ```yaml
       - run: npm ci && npm run build
         env:
-          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
-          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
-          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
-          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
-          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
-          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
-```
-
-### 4. Configuracion de Secretos en GitHub (Repository Secrets)
-Debido a que el archivo `.env.local` contiene informacion sensible y esta excluido del control de versiones (via `.gitignore`), los servidores de GitHub necesitan conocer estos valores de otra forma segura.
-
-En el repositorio de GitHub, se debe navegar a **Settings > Secrets and variables > Actions** y crear los siguientes secretos de repositorio (Repository secrets):
-
-#### Variables de Entorno de la Aplicacion (Frontend)
-Se obtienen de la configuracion del proyecto web en la consola de Firebase:
-- `VITE_FIREBASE_API_KEY`
-- `VITE_FIREBASE_AUTH_DOMAIN`
-- `VITE_FIREBASE_PROJECT_ID`
-- `VITE_FIREBASE_STORAGE_BUCKET`
-- `VITE_FIREBASE_MESSAGING_SENDER_ID`
-- `VITE_FIREBASE_APP_ID`
-
-#### Llaves de Servicio (Service Accounts)
-Para que GitHub pueda autorizar el despliegue de archivos hacia Firebase Hosting sin intervencion humana, necesita permisos de administrador a nivel de Google Cloud. 
-1. Ir a la Consola de Firebase > Configuracion del proyecto > Cuentas de servicio.
-2. Hacer clic en "Generar nueva clave privada" (esto descargara un archivo JSON).
-3. Copiar todo el texto del archivo JSON y pegarlo como un nuevo secreto en GitHub.
-- Ejemplo de nombre: `FIREBASE_SERVICE_ACCOUNT_GESTORCENTRALDEV`
-
-Este secreto es el que se le proporciona al paso final del workflow de GitHub Actions:
-```yaml
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY_STG }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN_STG }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID_STG }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET_STG }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID_STG }}
+          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID_STG }}
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GESTORCENTRALDEV }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_STG }}
           channelId: live
-          projectId: gestorcentraldev
+          projectId: id-proyecto-stg
 ```
 
-## Solucion de Problemas Comunes y Como Evitarlos
+---
 
-### 1. Pantalla en blanco y error: Uncaught FirebaseError: Firebase: Error (auth/invalid-api-key)
-- **Por que ocurre:** El proyecto se compilo en los servidores de GitHub Actions, pero las variables de entorno nunca fueron inyectadas. Vite genera los archivos estaticos correctamente, pero el SDK de Firebase falla inmediatamente al no encontrar una `apiKey` valida para inicializarse.
-- **Como evitarlo / solucionarlo:** 
-  1. Asegurarse de que el paso `npm run build` en el archivo YAML de GitHub Actions incluya el bloque `env:` mapeando los secretos de GitHub a las variables locales. 
-  2. Verificar estrictamente que los nombres de los secretos esten escritos correctamente en la seccion Settings del repositorio de GitHub. 
-  3. Si se corrige, es necesario volver a ejecutar el proceso haciendo clic en "Re-run all jobs" dentro de la accion fallida en GitHub, o hacer un nuevo push.
+## 5. Configuracion de Secretos en GitHub (Repository Secrets)
+Debido a que el archivo `.env.local` esta excluido del control de versiones (via `.gitignore`), los servidores de GitHub necesitan conocer estos valores.
 
-### 2. Error en GitHub al hacer push: Push cannot contain secrets (GitHub Push Protection)
-- **Por que ocurre:** El sistema de seguridad de GitHub detecta que se esta intentando subir (push) un archivo que contiene llaves privadas reales (como el JSON descargado de la cuenta de servicio de Firebase). GitHub bloquea la accion para evitar la filtracion de datos sensibles al publico.
-- **Como evitarlo / solucionarlo:** 
-  1. Nunca ejecutar `git add .` ciegamente sin revisar que archivos se estan incluyendo.
-  2. Agregar siempre la extension `*.json` (o el nombre especifico del archivo de credenciales) al archivo `.gitignore` **antes** de hacer el primer commit.
-  3. Si el archivo ya se agrego al area de staging localmente por accidente, se debe remover del historial antes de intentar empujar de nuevo:
-     ```bash
-     # Sacar el archivo del rastreo de git sin borrarlo de la computadora
-     git rm --cached nombre-del-archivo-credenciales.json
-     
-     # Reescribir el ultimo commit para limpiarlo
-     git commit --amend -m "Mensaje del commit corregido"
-     ```
+En el repositorio de GitHub > **Settings > Secrets and variables > Actions**, se deben crear 3 bloques de secretos (uno por ambiente):
 
-## Consideraciones Finales sobre la Arquitectura
-- Manten siempre una estricta separacion de bases de datos. Los datos insertados durante las pruebas en el entorno de desarrollo nunca deben cruzarse con el proyecto configurado como produccion.
-- Si en el futuro se desea tener despliegues verdaderamente paralelos (donde `develop` despliega automaticamente a un proyecto de Firebase A y `main` despliega a un proyecto de Firebase B), es necesario:
-  1. Crear dos llaves de servicio (una de cada proyecto) y guardarlas como dos secretos distintos en GitHub.
-  2. Modificar la logica de los archivos YAML para que, dependiendo de la rama que dispare la accion, se utilice dinamicamente un `projectId` u otro.
+#### Variables del Frontend (Multiplicadas por _DEV, _STG, _PRD)
+- `VITE_FIREBASE_API_KEY_DEV` / `_STG` / `_PRD`
+- `VITE_FIREBASE_AUTH_DOMAIN_DEV` / `_STG` / `_PRD`
+- `VITE_FIREBASE_PROJECT_ID_DEV` / `_STG` / `_PRD`
+- `VITE_FIREBASE_STORAGE_BUCKET_DEV` / `_STG` / `_PRD`
+- `VITE_FIREBASE_MESSAGING_SENDER_ID_DEV` / `_STG` / `_PRD`
+- `VITE_FIREBASE_APP_ID_DEV` / `_STG` / `_PRD`
+
+#### Llaves de Servicio (Cuentas de Servicio JSON)
+El contenido integro de cada archivo JSON descargado desde Google Cloud IAM:
+- `FIREBASE_SERVICE_ACCOUNT_DEV`
+- `FIREBASE_SERVICE_ACCOUNT_STG`
+- `FIREBASE_SERVICE_ACCOUNT_PRD`
+
+---
+
+## Solucion de Problemas Comunes y Evitacion de Errores
+
+### 1. Manejo seguro de credenciales (CRITICO)
+**El Riesgo:** Subir por error los archivos JSON descargados de Firebase (`firebase-adminsdk...json`) puede resultar en la vulneracion de la base de datos completa. GitHub bloqueara automaticamente el push ("Push cannot contain secrets").
+**La Solucion Prevencion:** 
+Asegurarse de que el archivo `.gitignore` contenga reglas estrictas para omitir estos archivos **antes de hacer cualquier commit**:
+```gitignore
+# Firebase credentials
+firebase-credentials.json
+service-account-key.json
+firebase-adminsdk-*.json
+*-firebase-adminsdk-*.json
+```
+Si el archivo ya se agrego por accidente a la cola de git (stage):
+```bash
+git rm --cached nombre-archivo.json
+git commit --amend -m "chore: remove credentials"
+```
+
+### 2. Pantalla en blanco en produccion o pre-produccion
+- **Por que ocurre:** Error `Uncaught FirebaseError: Firebase: Error (auth/invalid-api-key)`. Vite empaqueto el codigo (en GitHub Actions) sin recibir variables de entorno. 
+- **Como solucionarlo:** 
+  1. Verificar que el archivo `deploy-*.yml` de ese entorno tenga el bloque `env:` en el paso de build.
+  2. Comprobar que los nombres de los secretos en el YAML coincidan EXACTAMENTE (sensible a mayusculas) con los nombres de los secretos guardados en GitHub Settings.
+  3. Ejecutar de nuevo el flujo haciendo clic en "Re-run all jobs" en GitHub.
