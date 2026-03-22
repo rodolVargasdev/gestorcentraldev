@@ -94,31 +94,106 @@ Para que Vite (herramienta de construccion) funcione, las variables deben inyect
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_STG }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GESTORCENTRALSTG }}
           channelId: live
-          projectId: id-proyecto-stg
+          projectId: gestorcentralstg
 ```
 
 ---
 
-## 5. Configuracion de Secretos en GitHub (Repository Secrets)
-Debido a que el archivo `.env.local` esta excluido del control de versiones (via `.gitignore`), los servidores de GitHub necesitan conocer estos valores.
+## 5. Secretos en GitHub: nombres exactos y que valor poner en cada uno
 
-En el repositorio de GitHub > **Settings > Secrets and variables > Actions**, se deben crear 3 bloques de secretos (uno por ambiente):
+### Por que existen estos secretos
+GitHub Actions ejecuta `npm run build` en la nube **sin** tu archivo `.env.local` (no se sube al repo). Por eso hay que definir **Repository secrets** con los mismos datos que usarias en local. Ademas, la accion `FirebaseExtended/action-hosting-deploy` necesita el **JSON completo de la cuenta de servicio** de Firebase para poder subir archivos a Hosting; si falta ese secret, el error tipico es: `Input required and not supplied: firebaseServiceAccount`.
 
-#### Variables del Frontend (Multiplicadas por _DEV, _STG, _PRD)
-- `VITE_FIREBASE_API_KEY_DEV` / `_STG` / `_PRD`
-- `VITE_FIREBASE_AUTH_DOMAIN_DEV` / `_STG` / `_PRD`
-- `VITE_FIREBASE_PROJECT_ID_DEV` / `_STG` / `_PRD`
-- `VITE_FIREBASE_STORAGE_BUCKET_DEV` / `_STG` / `_PRD`
-- `VITE_FIREBASE_MESSAGING_SENDER_ID_DEV` / `_STG` / `_PRD`
-- `VITE_FIREBASE_APP_ID_DEV` / `_STG` / `_PRD`
+### Donde crearlos
+En el repositorio: **Settings > Secrets and variables > Actions > New repository secret**.
 
-#### Llaves de Servicio (Cuentas de Servicio JSON)
-El contenido integro de cada archivo JSON descargado desde Google Cloud IAM:
-- `FIREBASE_SERVICE_ACCOUNT_DEV`
-- `FIREBASE_SERVICE_ACCOUNT_STG`
-- `FIREBASE_SERVICE_ACCOUNT_PRD`
+**No** debes crear manualmente `GITHUB_TOKEN`: GitHub lo inyecta solo en los workflows.
+
+### Donde obtener los valores (Firebase Console)
+Para **cada** proyecto Firebase (dev, stg, prd):
+
+1. **Configuracion del proyecto** (icono de engranaje) > pestana **General**.
+2. Baja hasta **Tus apps** y selecciona la app **Web** (`</>`). Si no existe, creala.
+3. En el snippet de configuracion veras campos como `apiKey`, `authDomain`, `projectId`, `storageBucket`, `messagingSenderId`, `appId`. Esos son los valores de los secretos `VITE_FIREBASE_*` del ambiente correspondiente (uno por fila en las tablas de abajo).
+
+Para el **JSON de cuenta de servicio** (un solo secret por ambiente):
+
+1. Misma **Configuracion del proyecto** > **Cuentas de servicio**.
+2. **Generar nueva clave privada** (descarga un archivo `.json`).
+3. Abre el archivo y copia **todo el contenido** desde la primera `{` hasta la ultima `}`.
+4. Pegalo **entero** en el secret `FIREBASE_SERVICE_ACCOUNT_*` de esa fila. Sin comillas envolventes adicionales, sin cortar lineas.
+
+### Reglas para no fallar
+- El **nombre** del secret en GitHub debe coincidir **literalmente** con el del workflow (mayusculas, guiones bajos).
+- Los valores `VITE_*` son **texto plano** (una linea por secret).
+- El valor de `FIREBASE_SERVICE_ACCOUNT_*` es **un JSON multilinea** en un solo secret (GitHub lo admite).
+- Si falta cualquier `VITE_*` en el build, la app puede compilar con variables vacias y en el navegador aparecera `auth/invalid-api-key`.
+
+---
+
+### 5.1 Ambiente DEV (preview en Pull Request)
+**Workflow:** `.github/workflows/deploy-preview.yml`  
+**Proyecto Firebase en el YAML:** `gestorcentraldev`
+
+| Nombre exacto del secret | Que pegar |
+|--------------------------|-----------|
+| `VITE_FIREBASE_API_KEY_DEV` | Valor de **apiKey** de la app web del proyecto **gestorcentraldev** |
+| `VITE_FIREBASE_AUTH_DOMAIN_DEV` | **authDomain** |
+| `VITE_FIREBASE_PROJECT_ID_DEV` | **projectId** (debe ser `gestorcentraldev`) |
+| `VITE_FIREBASE_STORAGE_BUCKET_DEV` | **storageBucket** |
+| `VITE_FIREBASE_MESSAGING_SENDER_ID_DEV` | **messagingSenderId** |
+| `VITE_FIREBASE_APP_ID_DEV` | **appId** |
+| `FIREBASE_SERVICE_ACCOUNT_GESTORCENTRALDEV` | Contenido **completo** del JSON de cuenta de servicio de **gestorcentraldev** |
+
+**Cuando corre:** al abrir o actualizar un **Pull Request** (despliega un canal de vista previa en ese proyecto).
+
+---
+
+### 5.2 Ambiente STG (Staging)
+**Workflow:** `.github/workflows/deploy-staging.yml`  
+**Rama que lo dispara:** `staging` (push)  
+**Proyecto Firebase en el YAML:** `gestorcentralstg`
+
+| Nombre exacto del secret | Que pegar |
+|--------------------------|-----------|
+| `VITE_FIREBASE_API_KEY_STG` | **apiKey** de la app web de **gestorcentralstg** |
+| `VITE_FIREBASE_AUTH_DOMAIN_STG` | **authDomain** |
+| `VITE_FIREBASE_PROJECT_ID_STG` | **projectId** (debe ser `gestorcentralstg`) |
+| `VITE_FIREBASE_STORAGE_BUCKET_STG` | **storageBucket** |
+| `VITE_FIREBASE_MESSAGING_SENDER_ID_STG` | **messagingSenderId** |
+| `VITE_FIREBASE_APP_ID_STG` | **appId** |
+| `FIREBASE_SERVICE_ACCOUNT_GESTORCENTRALSTG` | Contenido **completo** del JSON de cuenta de servicio de **gestorcentralstg** |
+
+**Cuando corre:** cada **push** a la rama `staging` (deploy a Hosting "live" de ese proyecto).
+
+---
+
+### 5.3 Ambiente PRD (Produccion)
+**Workflow:** `.github/workflows/deploy-production.yml`  
+**Rama que lo dispara:** `main` (push)  
+**Proyecto Firebase en el YAML:** `g-license-mgr-dev-gsv000-015`
+
+| Nombre exacto del secret | Que pegar |
+|--------------------------|-----------|
+| `VITE_FIREBASE_API_KEY_PRD` | **apiKey** de la app web de **g-license-mgr-dev-gsv000-015** |
+| `VITE_FIREBASE_AUTH_DOMAIN_PRD` | **authDomain** |
+| `VITE_FIREBASE_PROJECT_ID_PRD` | **projectId** (debe ser `g-license-mgr-dev-gsv000-015`) |
+| `VITE_FIREBASE_STORAGE_BUCKET_PRD` | **storageBucket** |
+| `VITE_FIREBASE_MESSAGING_SENDER_ID_PRD` | **messagingSenderId** |
+| `VITE_FIREBASE_APP_ID_PRD` | **appId** |
+| `FIREBASE_SERVICE_ACCOUNT_GLICENSE_PRD` | Contenido **completo** del JSON de cuenta de servicio de **g-license-mgr-dev-gsv000-015** |
+
+**Cuando corre:** cada **push** a `main`. Conviene proteger la rama y exigir PR + revision antes de mergear.
+
+---
+
+### 5.4 Relacion con el desarrollo local
+Tu `.env.local` en la raiz del repo debe usar las mismas claves `VITE_FIREBASE_*` **sin** sufijo `_DEV` (son las del proyecto en el que trabajes cada dia, normalmente dev). Los workflows **no** leen `.env.local`; solo los **secrets** de GitHub con sufijo `_DEV`, `_STG` o `_PRD`.
+
+### 5.5 Tras configurar o corregir secretos
+En **Actions**, abre el workflow fallido y usa **Re-run jobs** para volver a ejecutar sin necesidad de un commit nuevo.
 
 ---
 
@@ -160,6 +235,14 @@ GitHub puede marcar como filtracion publica cualquier cadena que coincida con el
   1. Verificar que el archivo `deploy-*.yml` de ese entorno tenga el bloque `env:` en el paso de build.
   2. Comprobar que los nombres de los secretos en el YAML coincidan EXACTAMENTE (sensible a mayusculas) con los nombres de los secretos guardados en GitHub Settings.
   3. Ejecutar de nuevo el flujo haciendo clic en "Re-run all jobs" en GitHub.
+
+### 4. Error: Input required and not supplied: firebaseServiceAccount
+Significa que el workflow referencia `secrets.FIREBASE_SERVICE_ACCOUNT_...` pero ese secret **no existe** en el repositorio o el nombre no coincide **caracter por caracter** con el del YAML.
+
+1. Identifica **que workflow fallo** (preview, staging o production) segun la pestana **Actions**.
+2. Abre el `.yml` correspondiente en `.github/workflows/` y mira el valor exacto de `firebaseServiceAccount: ${{ secrets.NOMBRE }}`.
+3. Crea en GitHub un secret con ese **NOMBRE** y pega el JSON completo de la cuenta de servicio del **mismo** `projectId` que declara ese workflow.
+4. Consulta la **seccion 5** de este documento para la tabla de nombres y proyectos.
 
 ### Scripts Node y datos de prueba
 Cualquier script bajo `scripts/` o `src/scripts/` que use Firebase debe ejecutarse desde la raiz del proyecto con `.env.local` configurado (mismas variables `VITE_FIREBASE_*` que la app). Si faltan variables, el script fallara con un mensaje explicito en lugar de usar credenciales embebidas.
