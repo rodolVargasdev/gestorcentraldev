@@ -74,7 +74,7 @@ cp env.example .env.local
 
 **Ejemplo de `.env.local`:**
 ```env
-VITE_FIREBASE_API_KEY=AIzaSyCtuX1234567890abcdefghijklmnop
+VITE_FIREBASE_API_KEY=<pega_aqui_la_api_key_de_firebase_console>
 VITE_FIREBASE_AUTH_DOMAIN=mi-gestor-licencias.firebaseapp.com
 VITE_FIREBASE_PROJECT_ID=mi-gestor-licencias
 VITE_FIREBASE_STORAGE_BUCKET=mi-gestor-licencias.appspot.com

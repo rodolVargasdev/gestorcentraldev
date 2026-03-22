@@ -98,14 +98,16 @@ service cloud.firestore {
         import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js';
         import { getFirestore, collection, getDocs, getDoc, doc, setDoc, addDoc, updateDoc, serverTimestamp, writeBatch, query, where, orderBy, limit } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js';
 
-        // Configuración de Firebase
+        // Configuración de Firebase: NO pegues claves reales en este archivo versionado.
+        // Copia los valores desde Firebase Console > Configuración del proyecto > Tu app web.
+        // O usa solo en local sin hacer commit de este bloque.
         const firebaseConfig = {
-            apiKey: "AIzaSyA5q4HOusvXW8wObkuyrB8it1y7Tyq1op0",
-            authDomain: "licencias-gestor.firebaseapp.com",
-            projectId: "licencias-gestor",
-            storageBucket: "licencias-gestor.firebasestorage.app",
-            messagingSenderId: "592435804089",
-            appId: "1:592435804089:web:b2e6f3d3db466f18372868"
+            apiKey: "REEMPLAZA_CON_TU_API_KEY_DESDE_FIREBASE_CONSOLE",
+            authDomain: "tu-proyecto.firebaseapp.com",
+            projectId: "tu-project-id",
+            storageBucket: "tu-proyecto.appspot.com",
+            messagingSenderId: "000000000000",
+            appId: "1:000000000000:web:xxxxxxxxxxxx"
         };
 
         let app, db, auth;

@@ -34,17 +34,19 @@ criticalFiles.forEach(file => {
   if (!exists) allFilesExist = false;
 });
 
-console.log('\n🔧 Verificando configuración de Firebase:');
+console.log('\n🔧 Verificando configuración de Firebase (sin claves en el repo):');
 try {
-  const firebaseConfig = fs.readFileSync('src/lib/firebase.ts', 'utf8');
-  if (firebaseConfig.includes('AIzaSyC3zx8GWpHQ3SSlhrZiF4e3kgjGbraEt8g')) {
-    console.log('  ✅ Configuración de Firebase real detectada');
+  const cfgTs = fs.readFileSync('src/lib/firebase.config.ts', 'utf8');
+  const usesEnv =
+    cfgTs.includes('import.meta.env.VITE_FIREBASE_API_KEY') ||
+    cfgTs.includes('VITE_FIREBASE_PROJECT_ID');
+  if (usesEnv) {
+    console.log('  ✅ firebase.config.ts usa variables de entorno (no debe contener API keys literales)');
   } else {
-    console.log('  ❌ Configuración de Firebase no encontrada');
-    allFilesExist = false;
+    console.log('  ⚠️  Revisa firebase.config.ts: debe usar import.meta.env.*');
   }
 } catch (error) {
-  console.log('  ❌ Error al leer configuración de Firebase');
+  console.log('  ❌ Error al leer src/lib/firebase.config.ts');
   allFilesExist = false;
 }
 

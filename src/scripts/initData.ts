@@ -1,15 +1,8 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, addDoc, getDocs } from 'firebase/firestore';
+import { getFirebaseConfigForScripts } from './firebaseEnvForScripts';
 
-const firebaseConfig = {
-  apiKey: "tu-api-key-aqui",
-  authDomain: "tu-proyecto.firebaseapp.com",
-  projectId: "tu-proyecto-id",
-  storageBucket: "tu-proyecto.appspot.com",
-  messagingSenderId: "123456789012",
-  appId: "1:123456789012:web:abcdefghijklmnop",
-  measurementId: "G-XXXXXXXXXX"
-};
+const firebaseConfig = getFirebaseConfigForScripts();
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);

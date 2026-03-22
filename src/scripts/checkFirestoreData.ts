@@ -1,18 +1,9 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, getDocs, doc, getDoc } from 'firebase/firestore';
+import { getFirebaseConfigForScripts } from './firebaseEnvForScripts';
 
-// Configuración de Firebase (debe coincidir con tu proyecto)
-const firebaseConfig = {
-  apiKey: "AIzaSyC3zx8GWpHQ3SSlhrZiF4e3kgjGbraEt8g",
-  authDomain: "gestor-licencias-firebas-76c57.firebaseapp.com",
-  projectId: "gestor-licencias-firebas-76c57",
-  storageBucket: "gestor-licencias-firebas-76c57.firebasestorage.app",
-  messagingSenderId: "548549101547",
-  appId: "1:548549101547:web:9682a066fb0dc42c437bae",
-  measurementId: "G-F5YTZ695P3"
-};
+const firebaseConfig = getFirebaseConfigForScripts();
 
-// Inicializar Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 

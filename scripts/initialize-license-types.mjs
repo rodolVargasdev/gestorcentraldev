@@ -5,18 +5,13 @@
  * Versión ES Module compatible con el proyecto
  */
 
+import { createRequire } from 'module';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, doc, getDocs, query, where, writeBatch, setDoc, serverTimestamp } from 'firebase/firestore';
 
-// Configuración de Firebase (igual que en firebase.config.ts)
-const firebaseConfig = {
-  apiKey: "AIzaSyA5q4HOusvXW8wObkuyrB8it1y7Tyq1op0",
-  authDomain: "licencias-gestor.firebaseapp.com",
-  projectId: "licencias-gestor",
-  storageBucket: "licencias-gestor.firebasestorage.app",
-  messagingSenderId: "592435804089",
-  appId: "1:592435804089:web:b2e6f3d3db466f18372868"
-};
+const require = createRequire(import.meta.url);
+const { getFirebaseConfig } = require('./lib/firebase-env.cjs');
+const firebaseConfig = getFirebaseConfig();
 
 // Tipos de licencias predefinidos (basado en licenseTypes.ts)
 const LICENSE_TYPES = [

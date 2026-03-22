@@ -4,19 +4,14 @@
  * Script para verificar que la configuración de producción funciona correctamente
  */
 
+import { createRequire } from 'module';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { getFirestore, collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore';
 
-// Configuración de Firebase
-const firebaseConfig = {
-  apiKey: "AIzaSyA5q4HOusvXW8wObkuyrB8it1y7Tyq1op0",
-  authDomain: "licencias-gestor.firebaseapp.com",
-  projectId: "licencias-gestor",
-  storageBucket: "licencias-gestor.firebasestorage.app",
-  messagingSenderId: "592435804089",
-  appId: "1:592435804089:web:b2e6f3d3db466f18372868"
-};
+const require = createRequire(import.meta.url);
+const { getFirebaseConfig } = require('./lib/firebase-env.cjs');
+const firebaseConfig = getFirebaseConfig();
 
 async function verifyProductionSetup() {
   console.log('🔍 Verificando configuración de producción...\n');
